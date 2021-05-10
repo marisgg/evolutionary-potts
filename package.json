@@ -1,0 +1,23 @@
+{
+  "name": "evolutionary-potts",
+  "version": "1.0.0",
+  "description": "Extension of Artistoo for modelling evolution and foraging behaviour in CPM's",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No test specified!\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marisgg/evolutionary-potts.git"
+  },
+  "author": "Maris Galesloot, Luko van der Maas, Yannick Hogewind",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marisgg/evolutionary-potts/issues"
+  },
+  "homepage": "https://github.com/marisgg/evolutionary-potts#readme",
+  "dependencies": {
+    "Artistoo": "git+https://github.com/ingewortel/artistoo.git",
+    "npm": "^7.12.0"
+  }
+}
