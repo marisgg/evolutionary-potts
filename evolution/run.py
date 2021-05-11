@@ -1,4 +1,4 @@
 import evolution
 
 
-evolution.evolve("examples/node/run-ActModel.js", 100)
+evolution.evolve("src/runActModel.js", 100)
