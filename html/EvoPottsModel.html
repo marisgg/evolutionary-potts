@@ -17,6 +17,8 @@
         }
     </style>
 
+    <progress value=1000 max=1000 id="progressBar"></progress>
+
     <!-- These paths should be absolute and point to the Artistoo examples/html/ .js files, we take them from the node_modules dependency here -->
     <script src="../node_modules/Artistoo/examples/html/artistoo.js"></script>
     <script src="../node_modules/Artistoo/examples/html/fpsmeter.min.js"></script>
@@ -102,7 +104,7 @@
             }
         }
         /*  ---------------------------------- */
-        let sim, meter, gm
+        let sim, meter, gm, livelihood, max_livelihood
 
 
         function initialize() {
@@ -110,7 +112,8 @@
                 postMCSListener: postMCSListener,
                 drawCanvas: drawCanvas
             }
-
+            max_livelihood = 1000
+            livelihood = max_livelihood
             sim = new CPM.Simulation(config, custommethods)
             sim.g = new CPM.Grid2D([sim.C.extents[0] / config.chemokine_res, sim.C.extents[1] / config.chemokine_res], config.torus, "Float32")
             sim.gi = new CPM.CoarseGrid(sim.g, config.chemokine_res)
@@ -132,8 +135,17 @@
         function step() {
             sim.step()
             meter.tick()
+            mutate_livelihood(-1)
             if (sim.conf["RUNTIME_BROWSER"] == "Inf" | sim.time + 1 < sim.conf["RUNTIME_BROWSER"]) {
                 requestAnimationFrame(step)
+            }
+        }
+
+        function mutate_livelihood(arg) {
+            if (livelihood > 0 && arg < 0) {
+                livelihood += arg
+            } else if (livelihood < max_livelihood && arg > 0) {
+                livelihood += arg
             }
         }
 
@@ -160,11 +172,18 @@
                 if (sim.C.cellKind(cid) === 1) {
                     for (let ocid in conncomp[cid]) {
                         if (sim.C.cellKind(ocid) === 2) {
+                            // The cell found food, remove the food and decrease hunger/increase livelihood
                             gm.killCell(cid)
+                            mutate_livelihood(200)
                         }
                     }
+                } else if (sim.C.cellKind(cid) === 2 && livelihood <= 0) {
+                    console.log("Killed the cell due to starvation!")
+                    gm.killCell(cid)
+                    // alert("The cell died!")
                 }
             }
+
         }
 
         function drawCanvas() {
@@ -177,15 +196,22 @@
 
         }
 
+        var lifeProgress = setInterval(function(){
+          if(livelihood <= 0){
+            clearInterval(lifeProgress);
+          }
+          document.getElementById("progressBar").value = livelihood;
+        }, max_livelihood);
+
 
     </script>
 </head>
 
 <body onload="initialize()">
-    <h1>ActModel</h1>
+    <h1>Evolutionary Act Model</h1>
     <p>
 
-        Model of a migrating cell.
+        Model of a foraging migrating cell within a certain livespan.
     </p>
 </body>
 
