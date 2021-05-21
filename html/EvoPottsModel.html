@@ -34,7 +34,7 @@
 
             // Grid settings
             ndim: 2,
-            field_size: [200, 200],
+            field_size: [400, 400],
             chemokine_res: 5,
 
             // CPM parameters and configuration
@@ -44,8 +44,8 @@
                 seed: 1,                            // Seed for random number generation.
                 T: 10,                              // CPM temperature
                 D: 0.1,                             // Diffusion parameter
-                SECR: 5,                            // Chemokine secrection rate
-                DECAY: 0.99,                        // Chemokine decay
+                SECR: 3,                            // Chemokine secrection rate
+                DECAY: 0.999,                        // Chemokine decay
                 LAMBDA_CH: [0, 0, 500],            // Importance of chemokine for each cell kind 
 
                 // Constraint parameters. 
@@ -160,7 +160,7 @@
                 }
             }
 
-            for (let i = 1; i <= config.chemokine_res; i++) {
+            for (let i = 1; i <= 10; i++) {
                 this.g.diffusion(this.C.conf["D"])
             }
             this.g.multiplyBy(this.C.conf["DECAY"])
@@ -196,11 +196,11 @@
 
         }
 
-        var lifeProgress = setInterval(function(){
-          if(livelihood <= 0){
-            clearInterval(lifeProgress);
-          }
-          document.getElementById("progressBar").value = livelihood;
+        var lifeProgress = setInterval(function () {
+            if (livelihood <= 0) {
+                clearInterval(lifeProgress);
+            }
+            document.getElementById("progressBar").value = livelihood;
         }, max_livelihood);
 
 
