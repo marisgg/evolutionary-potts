@@ -1,4 +1,5 @@
 let CPM = require("Artistoo/build/artistoo-cjs")
+let other = require("Artistoo/build/artistoo")
 
 
 /*  ----------------------------------
@@ -16,7 +17,7 @@ let config = {
     conf: {
         // Basic CPM parameters
         torus: [false, false],                        // Should the grid have linked borders?
-        seed: 0,                            // Seed for random number generation.
+        seed: 1,                            // Seed for random number generation.
         T: 10,                              // CPM temperature
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
@@ -27,6 +28,8 @@ let config = {
         // Mostly these have the format of an array in which each element specifies the
         // parameter value for one of the cellkinds on the grid.
         // First value is always cellkind 0 (the background) and is often not used.
+
+        LAMBDA_CONNECTIVITY : [0, 0, 100], // (Soft(Local))ConnectivyConstraint lambda parameter for the strength of the penalty of breaking connectiviy
 
         // Adhesion parameters:
         J: [[0, 100, 10], [100, 10, -1], [10, -1, 0]],
@@ -83,8 +86,22 @@ let config = {
 
 
 let sim, gm
-let livelihood, max_livelihood, food_increment, livelihood_decay
+let livelihood, maxLivelihood, foodIncrement, livelihoodDecay
 
+class GatheredFood {
+    constructor(centroid, currentMCS) {
+        this.centroid = centroid
+        this.respawnTime = currentMCS + clip(Math.floor(Math.random()*100), 20, 100)
+    }
+
+    getRespawnTime() {
+        return this.respawnTime
+    }
+
+    getCentroid() {
+        return this.centroid
+    }
+}
 
 function initialize() {
     let custommethods = {
@@ -92,13 +109,24 @@ function initialize() {
     }
 
     // Foraging parameters
-    livelihood = max_livelihood = 1000
-    food_increment = 200
-    livelihood_decay = -0.5
+    livelihood = maxLivelihood = 1000
+    foodIncrement = 200
+    livelihoodDecay = -0.5
+
+    eatenFood = []
+    // Respawn food at random location or original?
+    respawnFoodAtRandom = false
+
+    mainCellKind = 2
+    foodCellKind = 1
 
     sim = new CPM.Simulation(config, custommethods)
     sim.g = new CPM.Grid2D([sim.C.extents[0] / config.chemokine_res, sim.C.extents[1] / config.chemokine_res], config.torus, "Float32")
     sim.gi = new CPM.CoarseGrid(sim.g, config.chemokine_res)
+
+    sim.C.add(new CPM.SoftLocalConnectivityConstraint({
+        LAMBDA_CONNECTIVITY : config.conf.LAMBDA_CONNECTIVITY
+    }))
 
     sim.C.add(new CPM.ChemotaxisConstraint({
         CH_FIELD: sim.gi,
@@ -111,11 +139,25 @@ function initialize() {
 
 function postMCSListener() {
     // Decay life every Monte Carlo step
-    mutate_livelihood(livelihood_decay)
+    mutateLivelihood(livelihoodDecay)
     
     if (killCels()) {
         // Cell died, return from simulation
         config.simsettings.RUNTIME = -1
+    }
+
+    for (let food of eatenFood) {
+        if (food.getRespawnTime() == sim.time) {
+            if (config.simsettings.DEBUG) {
+                console.log("Respawning food cell!")
+            }
+            if (respawnFoodAtRandom) {
+                this.gm.seedCell(foodCellKind)
+            } else {
+                // cellkind, position [a, b]
+                this.gm.seedCellAt(foodCellKind, food.getCentroid())
+            }
+        }
     }
     
     let centroids = this.C.getStat(CPM.CentroidsWithTorusCorrection)
@@ -136,25 +178,30 @@ function clip(x, lb, ub) {
     return Math.max(lb, Math.min(ub, x))
 }
 
-function mutate_livelihood(amount) {
-    livelihood = clip(livelihood + amount, 0, max_livelihood)
+function mutateLivelihood(amount) {
+    livelihood = clip(livelihood + amount, 0, maxLivelihood)
 }
 
 // Returns true if the main cell died
 function killCels() {
     for (let cid of sim.C.cellIDs()) {
-        if (sim.C.cellKind(cid) === 1) {
+        if (sim.C.cellKind(cid) === foodCellKind) {
             let conncomp = sim.C.getStat(CPM.CellNeighborList)
             for (let ocid in conncomp[cid]) {
-                if (sim.C.cellKind(ocid) === 2) {
-                    if(config.simsettings.DEBUG) { console.log(`Food found, increasing livelihood by ${food_increment}`) }
-                    mutate_livelihood(food_increment)
+                if (sim.C.cellKind(ocid) === mainCellKind) {
+                    if(config.simsettings.DEBUG) { console.log(`Food found, increasing livelihood by ${foodIncrement}`) }
+                    mutateLivelihood(foodIncrement)
+                    
+                    // Remember location of removed food before killing the food cell
+                    // Get centroid of the food cell eaten
+                    centroid = sim.C.getStat(CPM.Centroids)[cid]
+                    // Memorise
+                    eatenFood.push(new GatheredFood(centroid, sim.C.cellKind(cid), sim.time))
+                    // Kill
                     gm.killCell(cid)
-                    // Remember location of removed food
-                    // cell_centroid = sim.C.computeCentroidOfCell(cid, sim.M.getStat( PixelsByCell ) )
                 }
             }
-        } else if (sim.C.cellKind(cid) === 2 && livelihood <= 0) {
+        } else if (sim.C.cellKind(cid) === mainCellKind && livelihood <= 0) {
             if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
             gm.killCell(cid)
             return true
