@@ -202,6 +202,7 @@ function killCels() {
                 }
             }
         } else if (sim.C.cellKind(cid) === mainCellKind && livelihood <= 0) {
+            // TODO: check neighbors of main cell for food instead of vice versa
             if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
             gm.killCell(cid)
             return true
