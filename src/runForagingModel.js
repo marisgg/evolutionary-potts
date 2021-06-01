@@ -77,7 +77,7 @@ let config = {
         // Output stats etc
         STATSOUT: { browser: false, node: false }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
-        DEBUG : true,
+        DEBUG : false,
         FINAL_OUTPUT : true
     }
 }
@@ -123,7 +123,7 @@ function initialize() {
     sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.torus, "Float32")
     sim.gi = new CPM.CoarseGrid(sim.g, config.CHEMOKINE_RES)
 
-    sim.C.add(new CPM.SoftLocalConnectivityConstraint({
+    sim.C.add(new CPM.ConnectivityConstraint({
         LAMBDA_CONNECTIVITY : config.conf.LAMBDA_CONNECTIVITY
     }))
 
