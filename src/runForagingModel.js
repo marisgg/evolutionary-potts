@@ -10,7 +10,7 @@ let config = {
     // Grid settings
     ndim: 2,
     field_size: [400, 400],
-    CHEMOKINE_RES : 5,
+    CHEMOKINE_RES: 5,
 
     // CPM parameters and configuration
     conf: {
@@ -28,7 +28,7 @@ let config = {
         // parameter value for one of the cellkinds on the grid.
         // First value is always cellkind 0 (the background) and is often not used.
 
-        LAMBDA_CONNECTIVITY : [0, 0, 100], // (Soft(Local))ConnectivyConstraint lambda parameter for the strength of the penalty of breaking connectiviy
+        CONNECTIVITY: [false, false, true], // ConnectivyConstraint boolean parameter
 
         // Adhesion parameters:
         J: [[0, 100, 10], [100, 10, -1], [10, -1, 0]],
@@ -77,8 +77,8 @@ let config = {
         // Output stats etc
         STATSOUT: { browser: false, node: false }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
-        DEBUG : false,
-        FINAL_OUTPUT : true
+        DEBUG: false,
+        FINAL_OUTPUT: true
     }
 }
 /*  ---------------------------------- */
@@ -90,7 +90,7 @@ let livelihood, maxLivelihood, foodIncrement, livelihoodDecay
 class GatheredFood {
     constructor(centroid, currentMCS) {
         this.centroid = centroid
-        this.respawnTime = currentMCS + clip(Math.floor(Math.random()*100), 20, 100)
+        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 100), 20, 100)
     }
 
     getRespawnTime() {
@@ -104,7 +104,7 @@ class GatheredFood {
 
 function initialize() {
     let custommethods = {
-        postMCSListener : postMCSListener
+        postMCSListener: postMCSListener
     }
 
     // Foraging parameters
@@ -124,7 +124,7 @@ function initialize() {
     sim.gi = new CPM.CoarseGrid(sim.g, config.CHEMOKINE_RES)
 
     sim.C.add(new CPM.ConnectivityConstraint({
-        LAMBDA_CONNECTIVITY : config.conf.LAMBDA_CONNECTIVITY
+        CONNECTIVITY: config.conf.CONNECTIVITY
     }))
 
     sim.C.add(new CPM.ChemotaxisConstraint({
@@ -139,12 +139,13 @@ function initialize() {
 function postMCSListener() {
     // Decay life every Monte Carlo step
     mutateLivelihood(livelihoodDecay)
-    
+
     if (killCels()) {
         // Cell died, return from simulation
         config.simsettings.RUNTIME = -1
     }
-    
+
+    // TODO: debug
     // findFoodToRespawn()
 
     chemotaxisMCS(this)
@@ -176,7 +177,7 @@ function findFoodToRespawn() {
                 gm.seedCell(foodCellKind)
             } else {
                 // cellkind, position [a, b]
-                console.log(food.getCentroid().length   )
+                console.log(food.getCentroid().length)
                 gm.seedCellAt(foodCellKind, food.getCentroid())
             }
         }
@@ -198,9 +199,9 @@ function killCels() {
             let conncomp = sim.C.getStat(CPM.CellNeighborList)
             for (let ocid in conncomp[cid]) {
                 if (sim.C.cellKind(ocid) === mainCellKind) {
-                    if(config.simsettings.DEBUG) { console.log(`Food found, increasing livelihood by ${foodIncrement}`) }
+                    if (config.simsettings.DEBUG) { console.log(`Food found, increasing livelihood by ${foodIncrement}`) }
                     mutateLivelihood(foodIncrement)
-                    
+
                     // Remember location of removed food before killing the food cell
                     // Get centroid of the food cell eaten
                     let centroid = sim.C.getStat(CPM.CentroidsWithTorusCorrection)[cid]
