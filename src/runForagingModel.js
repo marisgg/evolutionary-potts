@@ -53,7 +53,7 @@ let config = {
     simsettings: {
 
         // Cells on the grid
-        NRCELLS: [10, 1],                       // Number of cells to seed for all
+        NRCELLS: [50, 1],                       // Number of cells to seed for all
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
@@ -77,7 +77,7 @@ let config = {
         // Output stats etc
         STATSOUT: { browser: false, node: false }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
-        DEBUG: false,
+        DEBUG: true,
         FINAL_OUTPUT: true
     }
 }
@@ -114,7 +114,7 @@ function initialize() {
 
     eatenFood = []
     // Respawn food at random location or original?
-    respawnFoodAtRandom = true
+    respawnFoodAtRandom = false
 
     mainCellKind = 2
     foodCellKind = 1
@@ -124,7 +124,7 @@ function initialize() {
     sim.gi = new CPM.CoarseGrid(sim.g, config.CHEMOKINE_RES)
 
     sim.C.add(new CPM.ConnectivityConstraint({
-        CONNECTIVITY: config.conf.CONNECTIVITY
+        CONNECTED: config.conf.CONNECTIVITY
     }))
 
     sim.C.add(new CPM.ChemotaxisConstraint({
@@ -145,13 +145,13 @@ function postMCSListener() {
         config.simsettings.RUNTIME = -1
     }
 
-    // TODO: debug
-    // findFoodToRespawn()
+    findFoodToRespawn()
 
     chemotaxisMCS(this)
 }
 
 function chemotaxisMCS(context) {
+    // TODO: this crashes after the food cells are reseeded in findFoodToRespawn() (probably something with mixed grids?)
     let centroids = context.C.getStat(CPM.CentroidsWithTorusCorrection)
     for (let cid in centroids) {
         if (context.C.cellKind(cid) === foodCellKind) {
@@ -167,18 +167,24 @@ function chemotaxisMCS(context) {
 }
 
 function findFoodToRespawn() {
-    for (let food of eatenFood) {
-        if (food.getRespawnTime() == sim.time) {
+    for (var i = 0; i < eatenFood.length; i++) {
+        if (eatenFood[i].getRespawnTime() === sim.time) {
             if (config.simsettings.DEBUG) {
                 console.log("Respawning food cell!")
+                console.log(eatenFood)
             }
-            // TODO: seedCell(At) crashes on the length of a centroid..
             if (respawnFoodAtRandom) {
                 gm.seedCell(foodCellKind)
             } else {
                 // cellkind, position [a, b]
-                console.log(food.getCentroid().length)
-                gm.seedCellAt(foodCellKind, food.getCentroid())
+                gm.seedCellAt(foodCellKind, eatenFood[i].getCentroid())
+            }
+            // Remove food from array
+            eatenFood.splice(i, 1)
+            i--
+            if (config.simsettings.DEBUG) {
+                console.log("Food respawned!")
+                console.log(eatenFood)
             }
         }
     }
