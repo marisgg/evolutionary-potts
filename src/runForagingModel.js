@@ -53,7 +53,7 @@ let config = {
     simsettings: {
 
         // Cells on the grid
-        NRCELLS: [50, 1],                       // Number of cells to seed for all
+        NRCELLS: [10, 1],                       // Number of cells to seed for all
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
@@ -77,7 +77,7 @@ let config = {
         // Output stats etc
         STATSOUT: { browser: false, node: false }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
-        DEBUG: true,
+        DEBUG: false,
         FINAL_OUTPUT: true
     }
 }
