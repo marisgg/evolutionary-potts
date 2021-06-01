@@ -1,5 +1,4 @@
 let CPM = require("Artistoo/build/artistoo-cjs")
-let other = require("Artistoo/build/artistoo")
 
 
 /*  ----------------------------------
@@ -11,7 +10,7 @@ let config = {
     // Grid settings
     ndim: 2,
     field_size: [400, 400],
-    chemokine_res: 5,
+    CHEMOKINE_RES : 5,
 
     // CPM parameters and configuration
     conf: {
@@ -115,14 +114,14 @@ function initialize() {
 
     eatenFood = []
     // Respawn food at random location or original?
-    respawnFoodAtRandom = false
+    respawnFoodAtRandom = true
 
     mainCellKind = 2
     foodCellKind = 1
 
     sim = new CPM.Simulation(config, custommethods)
-    sim.g = new CPM.Grid2D([sim.C.extents[0] / config.chemokine_res, sim.C.extents[1] / config.chemokine_res], config.torus, "Float32")
-    sim.gi = new CPM.CoarseGrid(sim.g, config.chemokine_res)
+    sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.torus, "Float32")
+    sim.gi = new CPM.CoarseGrid(sim.g, config.CHEMOKINE_RES)
 
     sim.C.add(new CPM.SoftLocalConnectivityConstraint({
         LAMBDA_CONNECTIVITY : config.conf.LAMBDA_CONNECTIVITY
@@ -145,33 +144,43 @@ function postMCSListener() {
         // Cell died, return from simulation
         config.simsettings.RUNTIME = -1
     }
+    
+    // findFoodToRespawn()
 
+    chemotaxisMCS(this)
+}
+
+function chemotaxisMCS(context) {
+    let centroids = context.C.getStat(CPM.CentroidsWithTorusCorrection)
+    for (let cid in centroids) {
+        if (context.C.cellKind(cid) === foodCellKind) {
+            let c = [Math.floor(centroids[cid][0] / config.CHEMOKINE_RES), Math.floor(centroids[cid][1] / config.CHEMOKINE_RES)]
+            context.g.setpix(c, context.C.conf["SECR"])
+        }
+    }
+
+    for (let i = 1; i <= config.CHEMOKINE_RES; i++) {
+        context.g.diffusion(context.C.conf["D"])
+    }
+    context.g.multiplyBy(context.C.conf["DECAY"])
+}
+
+function findFoodToRespawn() {
     for (let food of eatenFood) {
         if (food.getRespawnTime() == sim.time) {
             if (config.simsettings.DEBUG) {
                 console.log("Respawning food cell!")
             }
+            // TODO: seedCell(At) crashes on the length of a centroid..
             if (respawnFoodAtRandom) {
-                this.gm.seedCell(foodCellKind)
+                gm.seedCell(foodCellKind)
             } else {
                 // cellkind, position [a, b]
-                this.gm.seedCellAt(foodCellKind, food.getCentroid())
+                console.log(food.getCentroid().length   )
+                gm.seedCellAt(foodCellKind, food.getCentroid())
             }
         }
     }
-    
-    let centroids = this.C.getStat(CPM.CentroidsWithTorusCorrection)
-    for (let cid in centroids) {
-        if (this.C.cellKind(cid) === 1) {
-            let c = [Math.floor(centroids[cid][0] / config.chemokine_res), Math.floor(centroids[cid][1] / config.chemokine_res)]
-            this.g.setpix(c, this.C.conf["SECR"])
-        }
-    }
-
-    for (let i = 1; i <= config.chemokine_res; i++) {
-        this.g.diffusion(this.C.conf["D"])
-    }
-    this.g.multiplyBy(this.C.conf["DECAY"])
 }
 
 function clip(x, lb, ub) {
@@ -194,9 +203,9 @@ function killCels() {
                     
                     // Remember location of removed food before killing the food cell
                     // Get centroid of the food cell eaten
-                    centroid = sim.C.getStat(CPM.Centroids)[cid]
+                    let centroid = sim.C.getStat(CPM.CentroidsWithTorusCorrection)[cid]
                     // Memorise
-                    eatenFood.push(new GatheredFood(centroid, sim.C.cellKind(cid), sim.time))
+                    eatenFood.push(new GatheredFood(centroid, sim.time))
                     // Kill
                     gm.killCell(cid)
                 }
