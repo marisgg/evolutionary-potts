@@ -12,6 +12,9 @@ let config = {
     field_size: [400, 400],
     CHEMOKINE_RES: 5,
 
+    // Boolean indicating whether gathered food respawns
+    RESPAWN_FOOD : false,
+
     // CPM parameters and configuration
     conf: {
         // Basic CPM parameters
@@ -144,8 +147,9 @@ function postMCSListener() {
         // Cell died, return from simulation
         config.simsettings.RUNTIME = -1
     }
-
-    findFoodToRespawn()
+    if (config.RESPAWN_FOOD) {
+        findFoodToRespawn()
+    }
 
     chemotaxisMCS(this)
 }
