@@ -2,7 +2,7 @@ import subprocess
 import pandas as pd
 import io
 import random
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 import time
 import os
 import json
@@ -113,7 +113,7 @@ def evolve(filename, num_generations):
     init()
     generation = [{"MAX_ACT":2, "P":250, "V": 500, "LAMBDA_ACT": 300, "LAMBDA_P": 2, "LAMBDA_V": 5} for i in range(GENERATION_SIZE)]
     for i in range(num_generations):
-        gen_fitnesses = simulate_generation(generation, filename)
+        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_inverse_position_sample(gen_fitnesses)
 
     
