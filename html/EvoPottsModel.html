@@ -35,12 +35,12 @@
             // Grid settings
             ndim: 2,
             field_size: [400, 400],
-            chemokine_res: 5,
+            CHEMOKINE_RES: 5,
 
             // CPM parameters and configuration
             conf: {
                 // Basic CPM parameters
-                torus: [true, true],                        // Should the grid have linked borders?
+                torus: [false, false],                        // Should the grid have linked borders?
                 seed: 1,                            // Seed for random number generation.
                 T: 10,                              // CPM temperature
                 D: 0.1,                             // Diffusion parameter
@@ -53,6 +53,8 @@
                 // parameter value for one of the cellkinds on the grid.
                 // First value is always cellkind 0 (the background) and is often not used.
 
+                CONNECTIVITY: [false, false, true], // ConnectivyConstraint boolean parameter
+                
                 // Adhesion parameters:
                 J: [[0, 100, 10], [100, 10, -1], [10, -1, 0]],
 
@@ -80,7 +82,7 @@
                 // non-background cellkinds.
                 // Runtime etc
                 BURNIN: 500,
-                RUNTIME: 1000,
+                RUNTIME: 10000,
                 RUNTIME_BROWSER: "Inf",
 
                 // Visualization
@@ -94,29 +96,62 @@
                 SAVEIMG: false,                 // Should a png image of the grid be saved
                 // during the simulation?
                 IMGFRAMERATE: 1,                    // If so, do this every <IMGFRAMERATE> MCS.
-                SAVEPATH: "output/img/ActModel",    // ... And save the image in this folder.
-                EXPNAME: "ActModel",                    // Used for the filename of output images.
+                SAVEPATH: "output/img/ForagingModel",    // ... And save the image in this folder.
+                EXPNAME: "ForagingModel",                    // Used for the filename of output images.
 
                 // Output stats etc
-                STATSOUT: { browser: false, node: true }, // Should stats be computed?
-                LOGRATE: 10                         // Output stats every <LOGRATE> MCS.
-
+                STATSOUT: { browser: false, node: false }, // Should stats be computed?
+                LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
+                DEBUG: false,
+                FINAL_OUTPUT: true
             }
         }
         /*  ---------------------------------- */
-        let sim, meter, gm, livelihood, max_livelihood
 
+
+        let sim, gm, meter
+        let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, eatenFood, mainCellKind, foodCellKind, respawnFoodAtRandom
+
+        class GatheredFood {
+            constructor(centroid, currentMCS) {
+                this.centroid = centroid
+                this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 100), 20, 100)
+            }
+
+            getRespawnTime() {
+                return this.respawnTime
+            }
+
+            getCentroid() {
+                return this.centroid
+            }
+        }
 
         function initialize() {
             let custommethods = {
                 postMCSListener: postMCSListener,
                 drawCanvas: drawCanvas
             }
-            max_livelihood = 1000
-            livelihood = max_livelihood
+
+            // Foraging parameters
+            livelihood = maxLivelihood = 1000
+            foodIncrement = 200
+            livelihoodDecay = -1
+
+            eatenFood = []
+            // Respawn food at random location or original?
+            respawnFoodAtRandom = true
+
+            mainCellKind = 2
+            foodCellKind = 1
+
             sim = new CPM.Simulation(config, custommethods)
-            sim.g = new CPM.Grid2D([sim.C.extents[0] / config.chemokine_res, sim.C.extents[1] / config.chemokine_res], config.torus, "Float32")
-            sim.gi = new CPM.CoarseGrid(sim.g, config.chemokine_res)
+            sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.torus, "Float32")
+            sim.gi = new CPM.CoarseGrid(sim.g, config.CHEMOKINE_RES)
+
+            sim.C.add(new CPM.ConnectivityConstraint({
+                CONNECTED: config.conf.CONNECTIVITY
+            }))
 
             sim.C.add(new CPM.ChemotaxisConstraint({
                 CH_FIELD: sim.gi,
@@ -125,65 +160,100 @@
             ))
 
             gm = new CPM.GridManipulator(sim.C)
-
-
             meter = new FPSMeter({ left: "auto", right: "5px" })
             step()
         }
 
+        function postMCSListener() {
+            // Decay life every Monte Carlo step
+            mutateLivelihood(livelihoodDecay)
+
+            if (killCels()) {
+                // Cell died, return from simulation
+                config.simsettings.RUNTIME = -1
+            }
+
+            // findFoodToRespawn()
+
+            chemotaxisMCS(this)
+        }
+
+        function chemotaxisMCS(context) {
+            let centroids = context.C.getStat(CPM.CentroidsWithTorusCorrection)
+            for (let cid in centroids) {
+                if (context.C.cellKind(cid) === foodCellKind) {
+                    let c = [Math.floor(centroids[cid][0] / config.CHEMOKINE_RES), Math.floor(centroids[cid][1] / config.CHEMOKINE_RES)]
+                    context.g.setpix(c, context.C.conf["SECR"])
+                }
+            }
+
+            for (let i = 1; i <= config.CHEMOKINE_RES; i++) {
+                context.g.diffusion(context.C.conf["D"])
+            }
+            context.g.multiplyBy(context.C.conf["DECAY"])
+        }
+
+        function findFoodToRespawn() {
+            for (let food of eatenFood) {
+                if (food.getRespawnTime() == sim.time) {
+                    if (config.simsettings.DEBUG) {
+                        console.log("Respawning food cell!")
+                    }
+                    // TODO: seedCell(At) crashes on the length of a centroid..
+                    if (respawnFoodAtRandom) {
+                        gm.seedCell(foodCellKind)
+                    } else {
+                        // cellkind, position [a, b]
+                        console.log(food.getCentroid().length)
+                        gm.seedCellAt(foodCellKind, food.getCentroid())
+                    }
+                }
+            }
+        }
+
+        function clip(x, lb, ub) {
+            return Math.max(lb, Math.min(ub, x))
+        }
+
+        function mutateLivelihood(amount) {
+            livelihood = clip(livelihood + amount, 0, maxLivelihood)
+        }
+
+        // Returns true if the main cell died
+        function killCels() {
+            for (let cid of sim.C.cellIDs()) {
+                if (sim.C.cellKind(cid) === foodCellKind) {
+                    let conncomp = sim.C.getStat(CPM.CellNeighborList)
+                    for (let ocid in conncomp[cid]) {
+                        if (sim.C.cellKind(ocid) === mainCellKind) {
+                            if (config.simsettings.DEBUG) { console.log(`Food found, increasing livelihood by ${foodIncrement}`) }
+                            mutateLivelihood(foodIncrement)
+
+                            // Remember location of removed food before killing the food cell
+                            // Get centroid of the food cell eaten
+                            let centroid = sim.C.getStat(CPM.CentroidsWithTorusCorrection)[cid]
+                            // Memorise
+                            eatenFood.push(new GatheredFood(centroid, sim.time))
+                            // Kill
+                            gm.killCell(cid)
+                        }
+                    }
+                } else if (sim.C.cellKind(cid) === mainCellKind && livelihood <= 0) {
+                    // TODO: check neighbors of main cell for food instead of vice versa
+                    if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
+                    gm.killCell(cid)
+                    return true
+                }
+            }
+            return false
+        }
 
         function step() {
             sim.step()
             meter.tick()
-            mutate_livelihood(-1)
             if (sim.conf["RUNTIME_BROWSER"] == "Inf" | sim.time + 1 < sim.conf["RUNTIME_BROWSER"]) {
                 requestAnimationFrame(step)
             }
-        }
-
-        function mutate_livelihood(arg) {
-            if (livelihood > 0 && arg < 0) {
-                livelihood += arg
-            } else if (livelihood < max_livelihood && arg > 0) {
-                livelihood += arg
-            }
-        }
-
-        function postMCSListener() {
-            killCels()
-
-            let centroids = this.C.getStat(CPM.CentroidsWithTorusCorrection)
-            for (let cid in centroids) {
-                if (this.C.cellKind(cid) === 1) {
-                    let c = [Math.floor(centroids[cid][0] / config.chemokine_res), Math.floor(centroids[cid][1] / config.chemokine_res)]
-                    this.g.setpix(c, this.C.conf["SECR"])
-                }
-            }
-
-            for (let i = 1; i <= 10; i++) {
-                this.g.diffusion(this.C.conf["D"])
-            }
-            this.g.multiplyBy(this.C.conf["DECAY"])
-        }
-
-        function killCels() {
-            let conncomp = sim.C.getStat(CPM.CellNeighborList)
-            for (let cid of sim.C.cellIDs()) {
-                if (sim.C.cellKind(cid) === 1) {
-                    for (let ocid in conncomp[cid]) {
-                        if (sim.C.cellKind(ocid) === 2) {
-                            // The cell found food, remove the food and decrease hunger/increase livelihood
-                            gm.killCell(cid)
-                            mutate_livelihood(200)
-                        }
-                    }
-                } else if (sim.C.cellKind(cid) === 2 && livelihood <= 0) {
-                    console.log("Killed the cell due to starvation!")
-                    gm.killCell(cid)
-                    // alert("The cell died!")
-                }
-            }
-
         }
 
         function drawCanvas() {
@@ -201,7 +271,7 @@
                 clearInterval(lifeProgress);
             }
             document.getElementById("progressBar").value = livelihood;
-        }, max_livelihood);
+        }, maxLivelihood);
 
 
     </script>
