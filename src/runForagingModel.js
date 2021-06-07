@@ -18,13 +18,8 @@ let config = {
     // CPM parameters and configuration
     conf: {
         // Basic CPM parameters
-<<<<<<< HEAD
         torus: [false, false],                        // Should the grid have linked borders?
         //seed: 1,                            // Seed for random number generation.
-=======
-        torus: [false, false],              // Should the grid have linked borders?
-        seed: 1,                            // Seed for random number generation.
->>>>>>> eed185822e20162785e6173487092fcadc28ecbc
         T: 10,                              // CPM temperature
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
@@ -134,11 +129,8 @@ class GatheredFood {
 function initialize() {
     let custommethods = {
         postMCSListener: postMCSListener,
-<<<<<<< HEAD
-        logStats: logStats
-=======
+        logStats: logStats,
         drawCanvas: drawCanvas
->>>>>>> eed185822e20162785e6173487092fcadc28ecbc
     }
 
     // Foraging parameters
@@ -236,7 +228,6 @@ function drawCanvas() {
     }
 }
 
-<<<<<<< HEAD
 function logStats() {
 		
     // compute centroids for all cells
@@ -266,10 +257,7 @@ function logStats() {
 
 }
 
-function chemotaxisMCS(context) {
-=======
 function chemotaxisMCS() {
->>>>>>> eed185822e20162785e6173487092fcadc28ecbc
     // TODO: this crashes after the food cells are reseeded in findFoodToRespawn() (probably something with mixed grids?)
     let centroids = sim.C.getStat(CPM.Centroids)
     for (let cid in centroids) {
