@@ -9,15 +9,15 @@ import json
 import numpy as np
 
 PARAM_DIR = "./params"
-GENERATION_SIZE = 12
-MUTATION_SCALE = 1
+GENERATION_SIZE = 4*12
+MUTATION_SCALE = 5
 N_ELITE = 3
 
 def mutate_cell(cell):
     cell = cell.copy()
     for attr in cell.keys():
-        if np.random.choice([True, False]):
-            cell[attr] = max(2, np.round(cell[attr] + np.random.normal(scale=MUTATION_SCALE) + cell[attr]*np.random.normal(scale=MUTATION_SCALE)/10, decimals=2))
+        if np.random.choice([True]):
+            cell[attr] = max(2, np.round(cell[attr] + np.random.normal(scale=MUTATION_SCALE) + cell[attr]*np.random.normal(scale=MUTATION_SCALE)/100, decimals=2))
     return cell
 
 def fitness(history):
@@ -32,6 +32,7 @@ def fitness(history):
     return np.linalg.norm(endpos-startpos)
 
 def fitness_from_tuple(output):
+    output = output.splitlines()[-1]
     def to_int_or_float(s):
         try:
             return int(s)
@@ -124,7 +125,8 @@ def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesse
 
 def evolve(filename, num_generations):
     init()
-    generation = [{"MAX_ACT":2, "P":250, "V": 500, "LAMBDA_ACT": 300, "LAMBDA_P": 2, "LAMBDA_V": 5, "LAMBDA_CH":500} for i in range(GENERATION_SIZE)]
+    generation = [{'MAX_ACT': 40.07, 'P': 262.57, 'V': 396.1, 'LAMBDA_ACT': 35.54, 'LAMBDA_P': 4.67, 'LAMBDA_V': 10.42, 'LAMBDA_CH': 8.94} for i in range(GENERATION_SIZE)]
+    generation = list(map(mutate_cell, generation))
     for i in range(num_generations):
         gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_inverse_position_sample(gen_fitnesses)

@@ -14,6 +14,7 @@ let config = {
 
     // Boolean indicating whether gathered food respawns
     RESPAWN_FOOD : true,
+    RANDOM_FOOD_RESPAWN_TIME : false,
 
     // CPM parameters and configuration
     conf: {
@@ -56,7 +57,7 @@ let config = {
     simsettings: {
 
         // Cells on the grid
-        NRCELLS: [10, 1],                       // Number of cells to seed for all
+        NRCELLS: [10, 0],                       // Number of cells to seed for all
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
@@ -81,7 +82,7 @@ let config = {
         STATSOUT: { browser: false, node: true }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
         DEBUG: false,
-        FINAL_OUTPUT: false
+        FINAL_OUTPUT: true
     }
 }
 /*  ---------------------------------- */
@@ -111,10 +112,12 @@ let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, e
 
 class GatheredFood {
     constructor(centroid, currentMCS) {
-        this.centroid = centroid.map(function(e) {
-            return Math.round(e);
-        })
-        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 500), 300, 500)
+        this.centroid = centroid
+        if (config.RANDOM_FOOD_RESPAWN_TIME) {
+        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 200), 20, 200)
+        } else {
+            this.respawnTime = currentMCS + 200
+        }
     }
 
     getRespawnTime() {
@@ -160,9 +163,12 @@ function initialize() {
     ))
 
     gm = new CPM.GridManipulator(sim.C)
+    gm.seedCellAt(mainCellKind,[sim.C.extents[0]/2,sim.C.extents[1]/2])
+
+    let centroids = sim.C.getStat(CPM.Centroids)
+
     for (let cid of sim.C.cellIDs()) {
         if (sim.C.cellKind(cid) === mainCellKind) {
-            let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
             startX = centroids[cid][0]
             startY = centroids[cid][1]
         }
@@ -173,11 +179,8 @@ function postMCSListener() {
     // Decay life every Monte Carlo step
     mutateLivelihood(livelihoodDecay)
 
-    if (killCels()) {
-        
+    if (killCells()) {        
         // Cell died, return from simulation
-
-
         config.simsettings.RUNTIME = -1
     }
 
@@ -254,7 +257,7 @@ function logStats() {
         console.log( this.time + ", " + thecentroid.join(", ") );
         
     }
-
+    
 }
 
 function chemotaxisMCS() {
@@ -306,36 +309,43 @@ function mutateLivelihood(amount) {
 }
 
 // Returns true if the main cell died
-function killCels() {
+function killCells() {
     for (let cid of sim.C.cellIDs()) {
-        if (sim.C.cellKind(cid) === foodCellKind) {
-            let conncomp = sim.C.getStat(CPM.CellNeighborList)
-            for (let ocid in conncomp[cid]) {
-                if (sim.C.cellKind(ocid) === mainCellKind) {
+        if (sim.C.cellKind(cid) === mainCellKind) {
+            // Check whether main cell should be killed
+            if (livelihood <= 0) {
+                if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
+                if(typeof endX == "undefined" || typeof endY == "undefined") {
+                    // Undefined final position because cell is alive, calculate now
+                    let centroids = sim.C.getStat(CPM.Centroids)
+                    endX = centroids[cid][0]
+                    endY = centroids[cid][1]
+                }
+                distanceToFood = calc_distance_to_nearest_food()
+                // Kill main cell and return true => return from simulation
+                gm.killCell(cid)
+                return true
+            }
+            // Check whether main cell is next to a food cell
+            let neighbors = sim.C.getStat(CPM.CellNeighborList)[cid]
+            for (let neighborCellId in neighbors) {
+                if (sim.C.cellKind(neighborCellId) === foodCellKind) {
+                    // this neighborCellId represents a foodCell
+
                     if (config.simsettings.DEBUG) { console.log(`Food found, increasing livelihood by ${foodIncrement}`) }
                     mutateLivelihood(foodIncrement)
 
                     // Remember location of removed food before killing the food cell
                     // Get centroid of the food cell eaten
-                    let centroid = sim.C.getStat(CPM.Centroids)[cid]
-                    // Memorise
+                    let centroid = (sim.C.getStat(CPM.Centroids)[neighborCellId]).map(function(e) {
+                        return Math.floor(e);
+                    })
+                    // Memorise the food cell, and keep track of count for this centroid
                     eatenFood.push(new GatheredFood(centroid, sim.time))
-                    // Kill
-                    gm.killCell(cid)
+                    // Kill food cell
+                    gm.killCell(neighborCellId)
                 }
             }
-        } else if (sim.C.cellKind(cid) === mainCellKind && livelihood <= 0) {
-            // TODO: check neighbors of main cell for food instead of vice versa
-            if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
-            if(typeof endX == "undefined" || typeof endY == "undefined"){
-                // Undefined final position because cell is alive, calculate now
-                let centroids = sim.C.getStat(CPM.Centroids)
-                endX = centroids[cid][0]
-                endY = centroids[cid][1]
-            }
-            distanceToFood = calc_distance_to_nearest_food()
-            gm.killCell(cid)
-            return true
         }
     }
     return false
