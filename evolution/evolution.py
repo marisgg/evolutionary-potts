@@ -2,14 +2,14 @@ import subprocess
 import pandas as pd
 import io
 import random
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, Value, cpu_count
 import time
 import os
 import json
 import numpy as np
 
 PARAM_DIR = "./params"
-GENERATION_SIZE = 128
+GENERATION_SIZE = 12
 MUTATION_SCALE = 1
 N_ELITE = 3
 
@@ -31,36 +31,49 @@ def fitness(history):
         return -10000
     return np.linalg.norm(endpos-startpos)
 
+def fitness_from_tuple(output):
+    def to_int_or_float(s):
+        try:
+            return int(s)
+        except ValueError:
+            return float(s)
+    spl = output.rstrip("\n").split(",")
+    int_tuple = tuple(map(to_int_or_float, spl))
+    return int_tuple
+
 def run_js_simulation(args):
     (modelname, paramname) = args
     cmd = f"node ./{modelname} {paramname}"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = proc.communicate()[0]
     output = output.decode("utf-8")
-    outputIO = io.StringIO(output)
-    df = pd.read_csv(outputIO, sep="\t", header=None, names=["step","id","type","x","y"])
-    return df
+    return output
+    # outputIO = io.StringIO(output)
+    # df = pd.read_csv(outputIO, sep="\t", header=None, names=["step","id","type","x","y"])
+    # return df
 
 def create_param_files(generation):
     j = json.loads('''
                     {
                         "conf":{
-                            "MAX_ACT": [0, 2],
-                            "V": [0, 100],
-                            "P": [0, 100],
-                            "LAMBDA_ACT": [0, 2],
-                            "LAMBDA_V": [0, 2],
-                            "LAMBDA_P": [0, 2]
+                            "MAX_ACT": [0, 0, 30],
+                            "V": [0, 10, 500],
+                            "P": [0, 5, 260],
+                            "LAMBDA_ACT": [0, 0, 300],
+                            "LAMBDA_V": [0, 1000, 5],
+                            "LAMBDA_P": [0, 1, 2],
+                            "LAMBDA_CH": [0, 0, 500]
                         }
                     }''')
     paramnames = []
     for i, cell in enumerate(generation):
-        j["conf"]["MAX_ACT"][1] = cell["MAX_ACT"]
-        j["conf"]["V"][1] = cell["V"]
-        j["conf"]["P"][1] = cell["P"]
-        j["conf"]["LAMBDA_ACT"][1] = cell["LAMBDA_ACT"]
-        j["conf"]["LAMBDA_V"][1] = cell["LAMBDA_V"]
-        j["conf"]["LAMBDA_P"][1] = cell["LAMBDA_P"]
+        j["conf"]["MAX_ACT"][-1] = cell["MAX_ACT"]
+        j["conf"]["V"][-1] = cell["V"]
+        j["conf"]["P"][-1] = cell["P"]
+        j["conf"]["LAMBDA_ACT"][-1] = cell["LAMBDA_ACT"]
+        j["conf"]["LAMBDA_V"][-1] = cell["LAMBDA_V"]
+        j["conf"]["LAMBDA_P"][-1] = cell["LAMBDA_P"]
+        j["conf"]["LAMBDA_CH"][-1] = cell["LAMBDA_CH"]
         filename = f"{PARAM_DIR}/{i}.json"
         paramnames.append(filename)
         with open(filename, "w+") as f:
@@ -72,7 +85,7 @@ def simulate_generation(generation, modelname, num_procs=12):
     args = list(map(lambda x: (modelname, x), paramnames))
     with Pool(num_procs) as p:
         sim_results = p.map(run_js_simulation, args)
-    fitnesses = map(fitness, sim_results)
+    fitnesses = map(fitness_from_tuple, sim_results)
     gen_fitnesses = list(zip(generation, fitnesses))
     return gen_fitnesses
 
@@ -82,7 +95,7 @@ def init():
 def next_gen_elites_only(generation_with_fitnesses):
     # Sort by increasing fitness
     gen_w_f = sorted(generation_with_fitnesses, key=lambda x: x[1], reverse=True)
-    print(gen_w_f[0])
+    
     gen_w_f = list(map(lambda x: x[0], gen_w_f))
     gen_w_f = gen_w_f[:N_ELITE]
 
@@ -111,7 +124,7 @@ def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesse
 
 def evolve(filename, num_generations):
     init()
-    generation = [{"MAX_ACT":2, "P":250, "V": 500, "LAMBDA_ACT": 300, "LAMBDA_P": 2, "LAMBDA_V": 5} for i in range(GENERATION_SIZE)]
+    generation = [{"MAX_ACT":2, "P":250, "V": 500, "LAMBDA_ACT": 300, "LAMBDA_P": 2, "LAMBDA_V": 5, "LAMBDA_CH":500} for i in range(GENERATION_SIZE)]
     for i in range(num_generations):
         gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_inverse_position_sample(gen_fitnesses)
