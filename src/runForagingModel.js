@@ -60,7 +60,7 @@ let config = {
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
-        RUNTIME: 100,
+        RUNTIME: 10000,
         RUNTIME_BROWSER: "Inf",
 
         // Visualization
@@ -73,7 +73,7 @@ let config = {
         // Output images
         SAVEIMG: false,                 // Should a png image of the grid be saved
         // during the simulation?
-        IMGFRAMERATE: 1,                    // If so, do this every <IMGFRAMERATE> MCS.
+        IMGFRAMERATE: 10,                    // If so, do this every <IMGFRAMERATE> MCS.
         SAVEPATH: "output/img/ForagingModel",    // ... And save the image in this folder.
         EXPNAME: "ForagingModel",                    // Used for the filename of output images.
 
@@ -107,7 +107,7 @@ catch (err){
     // No value, leave default
 }
 let sim, gm
-let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY
+let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY, distanceToFood
 
 class GatheredFood {
     constructor(centroid, currentMCS) {
@@ -173,13 +173,7 @@ function postMCSListener() {
     mutateLivelihood(livelihoodDecay)
 
     if (killCels()) {
-        for (let cid of sim.C.cellIDs()) {
-            if (sim.C.cellKind(cid) === mainCellKind) {
-                let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
-                endX = centroids[cid][0]
-                endY = centroids[cid][1]
-            }
-        }
+        distanceToFood = calc_distance_to_nearest_food()
         // Cell died, return from simulation
 
 
@@ -320,17 +314,33 @@ initialize()
 
 sim.run()
 
-if (config.simsettings.FINAL_OUTPUT) {
-    if(typeof endX == "undefined" || typeof endY == "undefined"){
-        for (let cid of sim.C.cellIDs()) {
+function euclidean_distance(x1, x2, y1, y2){
+    return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2))
+}
+
+function calc_distance_to_nearest_food(){
+    let _distance_to_food = 100000
+    let _cellX, _cellY
+    let centroids = sim.C.getStat(CPM.Centroids)
+    for (let cid of sim.C.cellIDs()) {
         if (sim.C.cellKind(cid) === mainCellKind) {
-            // Undefined final position because cell is alive, calculate now
-            let centroids = sim.C.getStat(CPM.Centroids)
-            endX = centroids[cid][0]
-            endY = centroids[cid][1]
-            }
+            _cellX = centroids[cid][0]
+            _cellY = centroids[cid][1]
         }
     }
+    for (let cid of sim.C.cellIDs()) {
+        if (sim.C.cellKind(cid) === foodCellKind) {
+            let distance = euclidean_distance(_cellX, centroids[cid][0], _cellY, centroids[cid][1])
+            _distance_to_food = Math.min(_distance_to_food, distance)
+        }
+    }
+    return _distance_to_food
+}
+
+if (config.simsettings.FINAL_OUTPUT) {
+    if(typeof distanceToFood == "undefined"){
+        distanceToFood = calc_distance_to_nearest_food()
+    }
     let distance_traveled = Math.sqrt(Math.pow(startX-endX, 2) + Math.pow(startY-endY, 2))
-    console.log(sim.time+","+livelihood+","+distance_traveled)
+    console.log(sim.time+","+livelihood+","+(-distanceToFood))
 }
