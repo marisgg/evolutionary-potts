@@ -9,7 +9,7 @@ import json
 import numpy as np
 
 PARAM_DIR = "./params"
-GENERATION_SIZE = 128
+GENERATION_SIZE = 12
 MUTATION_SCALE = 1
 N_ELITE = 3
 
@@ -31,36 +31,42 @@ def fitness(history):
         return -10000
     return np.linalg.norm(endpos-startpos)
 
+def fitness_from_tuple(output):
+    spl = output.rstrip("\n").split(",")
+    int_tuple = tuple(map(int, spl))
+    return int_tuple
+
 def run_js_simulation(args):
     (modelname, paramname) = args
     cmd = f"node ./{modelname} {paramname}"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     output = proc.communicate()[0]
     output = output.decode("utf-8")
-    outputIO = io.StringIO(output)
-    df = pd.read_csv(outputIO, sep="\t", header=None, names=["step","id","type","x","y"])
-    return df
+    return output
+    # outputIO = io.StringIO(output)
+    # df = pd.read_csv(outputIO, sep="\t", header=None, names=["step","id","type","x","y"])
+    # return df
 
 def create_param_files(generation):
     j = json.loads('''
                     {
                         "conf":{
-                            "MAX_ACT": [0, 2],
-                            "V": [0, 100],
-                            "P": [0, 100],
-                            "LAMBDA_ACT": [0, 2],
-                            "LAMBDA_V": [0, 2],
-                            "LAMBDA_P": [0, 2]
+                            "MAX_ACT": [0, 0, 30],
+                            "V": [0, 10, 500],
+                            "P": [0, 5, 260],
+                            "LAMBDA_ACT": [0, 0, 300],
+                            "LAMBDA_V": [0, 1000, 5],
+                            "LAMBDA_P": [0, 1, 2]
                         }
                     }''')
     paramnames = []
     for i, cell in enumerate(generation):
-        j["conf"]["MAX_ACT"][1] = cell["MAX_ACT"]
-        j["conf"]["V"][1] = cell["V"]
-        j["conf"]["P"][1] = cell["P"]
-        j["conf"]["LAMBDA_ACT"][1] = cell["LAMBDA_ACT"]
-        j["conf"]["LAMBDA_V"][1] = cell["LAMBDA_V"]
-        j["conf"]["LAMBDA_P"][1] = cell["LAMBDA_P"]
+        j["conf"]["MAX_ACT"][-1] = cell["MAX_ACT"]
+        j["conf"]["V"][-1] = cell["V"]
+        j["conf"]["P"][-1] = cell["P"]
+        j["conf"]["LAMBDA_ACT"][-1] = cell["LAMBDA_ACT"]
+        j["conf"]["LAMBDA_V"][-1] = cell["LAMBDA_V"]
+        j["conf"]["LAMBDA_P"][-1] = cell["LAMBDA_P"]
         filename = f"{PARAM_DIR}/{i}.json"
         paramnames.append(filename)
         with open(filename, "w+") as f:
@@ -72,7 +78,7 @@ def simulate_generation(generation, modelname, num_procs=12):
     args = list(map(lambda x: (modelname, x), paramnames))
     with Pool(num_procs) as p:
         sim_results = p.map(run_js_simulation, args)
-    fitnesses = map(fitness, sim_results)
+    fitnesses = map(fitness_from_tuple, sim_results)
     gen_fitnesses = list(zip(generation, fitnesses))
     return gen_fitnesses
 
@@ -82,7 +88,7 @@ def init():
 def next_gen_elites_only(generation_with_fitnesses):
     # Sort by increasing fitness
     gen_w_f = sorted(generation_with_fitnesses, key=lambda x: x[1], reverse=True)
-    print(gen_w_f[0])
+    
     gen_w_f = list(map(lambda x: x[0], gen_w_f))
     gen_w_f = gen_w_f[:N_ELITE]
 

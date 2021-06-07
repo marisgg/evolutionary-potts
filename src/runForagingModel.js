@@ -1,5 +1,5 @@
 let CPM = require("Artistoo/build/artistoo-cjs")
-
+const fs = require('fs')
 
 /*  ----------------------------------
     CONFIGURATION SETTINGS
@@ -85,7 +85,19 @@ let config = {
     }
 }
 /*  ---------------------------------- */
+try {
+	const fileConfig = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+	config["conf"]["MAX_ACT"] = Object.values(fileConfig["conf"]["MAX_ACT"])
 
+	config["conf"]["LAMBDA_ACT"] = Object.values(fileConfig["conf"]["LAMBDA_ACT"])
+	config["conf"]["P"] = Object.values(fileConfig["conf"]["P"])
+	config["conf"]["LAMBDA_P"] = Object.values(fileConfig["conf"]["LAMBDA_P"])
+	config["conf"]["V"] = Object.values(fileConfig["conf"]["V"])
+	config["conf"]["LAMBDA_V"] = Object.values(fileConfig["conf"]["LAMBDA_V"])
+    
+  } catch (err) {
+	console.error(err)
+}
 
 let sim, gm
 let livelihood, maxLivelihood, foodIncrement, livelihoodDecay
@@ -236,5 +248,5 @@ initialize()
 sim.run()
 
 if (config.simsettings.FINAL_OUTPUT) {
-    console.log(sim.time)
+    console.log(sim.time+","+livelihood)
 }
