@@ -60,7 +60,7 @@ let config = {
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
-        RUNTIME: 10000,
+        RUNTIME: 100,
         RUNTIME_BROWSER: "Inf",
 
         // Visualization
@@ -321,7 +321,16 @@ initialize()
 sim.run()
 
 if (config.simsettings.FINAL_OUTPUT) {
-
+    if(typeof endX == "undefined" || typeof endY == "undefined"){
+        for (let cid of sim.C.cellIDs()) {
+        if (sim.C.cellKind(cid) === mainCellKind) {
+            // Undefined final position because cell is alive, calculate now
+            let centroids = sim.C.getStat(CPM.Centroids)
+            endX = centroids[cid][0]
+            endY = centroids[cid][1]
+            }
+        }
+    }
     let distance_traveled = Math.sqrt(Math.pow(startX-endX, 2) + Math.pow(startY-endY, 2))
     console.log(sim.time+","+livelihood+","+distance_traveled)
 }
