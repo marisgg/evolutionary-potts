@@ -134,7 +134,7 @@ function initialize() {
     }
 
     // Foraging parameters
-    livelihood = maxLivelihood = 10
+    livelihood = maxLivelihood = 1000
     foodIncrement = 200
     livelihoodDecay = -0.5
 
