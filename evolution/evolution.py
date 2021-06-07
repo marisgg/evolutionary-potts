@@ -9,7 +9,7 @@ import json
 import numpy as np
 
 PARAM_DIR = "./params"
-GENERATION_SIZE = 32
+GENERATION_SIZE = 12
 MUTATION_SCALE = 1
 N_ELITE = 3
 
@@ -61,7 +61,8 @@ def create_param_files(generation):
                             "P": [0, 5, 260],
                             "LAMBDA_ACT": [0, 0, 300],
                             "LAMBDA_V": [0, 1000, 5],
-                            "LAMBDA_P": [0, 1, 2]
+                            "LAMBDA_P": [0, 1, 2],
+                            "LAMBDA_CH": [0, 0, 500]
                         }
                     }''')
     paramnames = []
@@ -72,6 +73,7 @@ def create_param_files(generation):
         j["conf"]["LAMBDA_ACT"][-1] = cell["LAMBDA_ACT"]
         j["conf"]["LAMBDA_V"][-1] = cell["LAMBDA_V"]
         j["conf"]["LAMBDA_P"][-1] = cell["LAMBDA_P"]
+        j["conf"]["LAMBDA_CH"][-1] = cell["LAMBDA_CH"]
         filename = f"{PARAM_DIR}/{i}.json"
         paramnames.append(filename)
         with open(filename, "w+") as f:
@@ -122,7 +124,7 @@ def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesse
 
 def evolve(filename, num_generations):
     init()
-    generation = [{"MAX_ACT":2, "P":250, "V": 500, "LAMBDA_ACT": 300, "LAMBDA_P": 2, "LAMBDA_V": 5} for i in range(GENERATION_SIZE)]
+    generation = [{"MAX_ACT":2, "P":250, "V": 500, "LAMBDA_ACT": 300, "LAMBDA_P": 2, "LAMBDA_V": 5, "LAMBDA_CH":500} for i in range(GENERATION_SIZE)]
     for i in range(num_generations):
         gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_inverse_position_sample(gen_fitnesses)

@@ -94,6 +94,7 @@ try {
 	config["conf"]["LAMBDA_P"] = Object.values(fileConfig["conf"]["LAMBDA_P"])
 	config["conf"]["V"] = Object.values(fileConfig["conf"]["V"])
 	config["conf"]["LAMBDA_V"] = Object.values(fileConfig["conf"]["LAMBDA_V"])
+    config["conf"]["LAMBDA_CH"] = Object.values(fileConfig["conf"]["LAMBDA_CH"])
     
   } catch (err) {
 	console.error(err)
