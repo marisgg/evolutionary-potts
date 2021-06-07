@@ -19,7 +19,7 @@ let config = {
     conf: {
         // Basic CPM parameters
         torus: [false, false],                        // Should the grid have linked borders?
-        //seed: 1,                            // Seed for random number generation.
+        seed: 10,                            // Seed for random number generation.
         T: 10,                              // CPM temperature
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
@@ -37,16 +37,16 @@ let config = {
         J: [[0, 100, 10], [100, 10, -1], [10, -1, 0]],
 
         // VolumeConstraint parameters
-        LAMBDA_V: [0, 1000, 5],                     // VolumeConstraint importance per cellkind
-        V: [0, 10, 500],                            // Target volume of each cellkind
+        LAMBDA_V: [0, 243.08, 5],                     // VolumeConstraint importance per cellkind
+        V: [0, 10, 360.05],                            // Target volume of each cellkind
 
         // PerimeterConstraint parameters
-        LAMBDA_P: [0, 1, 2],                        // PerimeterConstraint importance per cellkind
-        P: [0, 5, 260],                             // Target perimeter of each cellkind
+        LAMBDA_P: [0, 1, 2.86],                        // PerimeterConstraint importance per cellkind
+        P: [0, 5, 283.82],                             // Target perimeter of each cellkind
 
         // ActivityConstraint parameters
-        LAMBDA_ACT: [0, 0, 300],                // ActivityConstraint importance per cellkind
-        MAX_ACT: [0, 0, 30],                    // Activity memory duration per cellkind
+        LAMBDA_ACT: [0, 0, 243.08],                // ActivityConstraint importance per cellkind
+        MAX_ACT: [0, 0, 4.28],                    // Activity memory duration per cellkind
         ACT_MEAN: "geometric"                   // Is neighborhood activity computed as a
         // "geometric" or "arithmetic" mean?
 
@@ -97,7 +97,7 @@ try {
     config["conf"]["LAMBDA_CH"] = Object.values(fileConfig["conf"]["LAMBDA_CH"])
     
   } catch (err) {
-	console.error(err)
+	// console.error(err)
 }
 
 try{
