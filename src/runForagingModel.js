@@ -13,18 +13,18 @@ let config = {
     CHEMOKINE_RES: 5,
 
     // Boolean indicating whether gathered food respawns
-    RESPAWN_FOOD : false,
+    RESPAWN_FOOD : true,
 
     // CPM parameters and configuration
     conf: {
         // Basic CPM parameters
-        torus: [false, false],                        // Should the grid have linked borders?
+        torus: [false, false],              // Should the grid have linked borders?
         seed: 1,                            // Seed for random number generation.
         T: 10,                              // CPM temperature
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
-        DECAY: 0.999,                        // Chemokine decay
-        LAMBDA_CH: [0, 0, 500],            // Importance of chemokine for each cell kind 
+        DECAY: 0.999,                       // Chemokine decay
+        LAMBDA_CH: [0, 0, 500],             // Importance of chemokine for each cell kind 
 
         // Constraint parameters. 
         // Mostly these have the format of an array in which each element specifies the
@@ -104,8 +104,10 @@ let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, e
 
 class GatheredFood {
     constructor(centroid, currentMCS) {
-        this.centroid = centroid
-        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 100), 20, 100)
+        this.centroid = centroid.map(function(e) {
+            return Math.round(e);
+        })
+        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 200), 20, 200)
     }
 
     getRespawnTime() {
@@ -176,11 +178,12 @@ function postMCSListener() {
 
         config.simsettings.RUNTIME = -1
     }
+
+    chemotaxisMCS()
+
     if (config.RESPAWN_FOOD) {
         findFoodToRespawn()
     }
-
-    chemotaxisMCS(this)
 }
 function drawCanvas() {
     // Add the canvas if required
@@ -221,22 +224,22 @@ function drawCanvas() {
         
 
     }
-
 }
-function chemotaxisMCS(context) {
+
+function chemotaxisMCS() {
     // TODO: this crashes after the food cells are reseeded in findFoodToRespawn() (probably something with mixed grids?)
-    let centroids = context.C.getStat(CPM.CentroidsWithTorusCorrection)
+    let centroids = sim.C.getStat(CPM.Centroids)
     for (let cid in centroids) {
-        if (context.C.cellKind(cid) === foodCellKind) {
+        if (sim.C.cellKind(cid) === foodCellKind) {
             let c = [Math.floor(centroids[cid][0] / config.CHEMOKINE_RES), Math.floor(centroids[cid][1] / config.CHEMOKINE_RES)]
-            context.g.setpix(c, context.C.conf["SECR"])
+            sim.g.setpix(c, sim.C.conf["SECR"])
         }
     }
 
     for (let i = 1; i <= config.CHEMOKINE_RES; i++) {
-        context.g.diffusion(context.C.conf["D"])
+        sim.g.diffusion(sim.C.conf["D"])
     }
-    context.g.multiplyBy(context.C.conf["DECAY"])
+    sim.g.multiplyBy(sim.C.conf["DECAY"])
 }
 
 function findFoodToRespawn() {
@@ -283,7 +286,7 @@ function killCels() {
 
                     // Remember location of removed food before killing the food cell
                     // Get centroid of the food cell eaten
-                    let centroid = sim.C.getStat(CPM.CentroidsWithTorusCorrection)[cid]
+                    let centroid = sim.C.getStat(CPM.Centroids)[cid]
                     // Memorise
                     eatenFood.push(new GatheredFood(centroid, sim.time))
                     // Kill
@@ -295,7 +298,7 @@ function killCels() {
             if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
             if(typeof endX == "undefined" || typeof endY == "undefined"){
                 // Undefined final position because cell is alive, calculate now
-                let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
+                let centroids = sim.C.getStat(CPM.Centroids)
                 endX = centroids[cid][0]
                 endY = centroids[cid][1]
             }
