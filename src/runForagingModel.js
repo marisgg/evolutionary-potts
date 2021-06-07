@@ -18,8 +18,8 @@ let config = {
     // CPM parameters and configuration
     conf: {
         // Basic CPM parameters
-        torus: [false, false],              // Should the grid have linked borders?
-        seed: 1,                            // Seed for random number generation.
+        torus: [false, false],                        // Should the grid have linked borders?
+        //seed: 1,                            // Seed for random number generation.
         T: 10,                              // CPM temperature
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
@@ -78,10 +78,10 @@ let config = {
         EXPNAME: "ForagingModel",                    // Used for the filename of output images.
 
         // Output stats etc
-        STATSOUT: { browser: false, node: false }, // Should stats be computed?
+        STATSOUT: { browser: false, node: true }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
         DEBUG: false,
-        FINAL_OUTPUT: true
+        FINAL_OUTPUT: false
     }
 }
 /*  ---------------------------------- */
@@ -129,6 +129,7 @@ class GatheredFood {
 function initialize() {
     let custommethods = {
         postMCSListener: postMCSListener,
+        logStats: logStats,
         drawCanvas: drawCanvas
     }
 
@@ -227,6 +228,35 @@ function drawCanvas() {
     }
 }
 
+function logStats() {
+		
+    // compute centroids for all cells
+    let allcentroids; 
+    let torus = false;
+    for( let d = 0; d < this.C.grid.ndim; d++ ){
+        if( this.C.grid.torus[d] ){
+            torus = true;
+        }
+    }
+    if( torus ){
+        allcentroids = this.C.getStat( CPM.CentroidsWithTorusCorrection );
+    } else {
+        allcentroids = this.C.getStat( CPM.Centroids );
+    }
+    for( let cid of this.C.cellIDs() ){
+        if (this.C.cellKind(cid) !== mainCellKind) {
+            continue;
+        }
+    
+        let thecentroid = allcentroids[cid];
+        
+        // eslint-disable-next-line no-console
+        console.log( this.time + ", " + thecentroid.join(", ") );
+        
+    }
+
+}
+
 function chemotaxisMCS() {
     // TODO: this crashes after the food cells are reseeded in findFoodToRespawn() (probably something with mixed grids?)
     let centroids = sim.C.getStat(CPM.Centroids)
@@ -313,6 +343,7 @@ function killCels() {
 
 initialize()
 
+console.log("t, x, y");
 sim.run()
 
 function euclidean_distance(x1, x2, y1, y2){

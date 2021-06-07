@@ -14,8 +14,8 @@ let config = {
     // CPM parameters and configuration
     conf : {
         // Basic CPM parameters
-        torus : [true,true],                        // Should the grid have linked borders?
-        seed : 1,                           // Seed for random number generation.
+        torus : [false,false],                        // Should the grid have linked borders?
+        //seed : 1,                           // Seed for random number generation.
         T : 10,                             // CPM temperature
         
         // Constraint parameters. 
@@ -50,7 +50,7 @@ let config = {
                                             // non-background cellkinds.
         // Runtime etc
         BURNIN : 500,
-        RUNTIME : 1000,
+        RUNTIME : 10000,
         RUNTIME_BROWSER : "Inf",
         
         // Visualization
