@@ -60,7 +60,7 @@ let config = {
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
-        RUNTIME: 5000,
+        RUNTIME: 10000,
         RUNTIME_BROWSER: "Inf",
 
         // Visualization
@@ -272,6 +272,5 @@ sim.run()
 if (config.simsettings.FINAL_OUTPUT) {
 
     let distance_traveled = Math.sqrt(Math.pow(startX-endX, 2) + Math.pow(startY-endY, 2))
-    console.error("post", startX, endX, startY, endY, distance_traveled)
     console.log(sim.time+","+livelihood+","+distance_traveled)
 }

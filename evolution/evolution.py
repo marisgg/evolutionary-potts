@@ -9,7 +9,7 @@ import json
 import numpy as np
 
 PARAM_DIR = "./params"
-GENERATION_SIZE = 12
+GENERATION_SIZE = 32
 MUTATION_SCALE = 1
 N_ELITE = 3
 
