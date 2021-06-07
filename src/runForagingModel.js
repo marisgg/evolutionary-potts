@@ -71,7 +71,7 @@ let config = {
         zoom: 2,                            // zoom in on canvas with this factor.
 
         // Output images
-        SAVEIMG: false,                 // Should a png image of the grid be saved
+        SAVEIMG: true,                 // Should a png image of the grid be saved
         // during the simulation?
         IMGFRAMERATE: 1,                    // If so, do this every <IMGFRAMERATE> MCS.
         SAVEPATH: "output/img/ForagingModel",    // ... And save the image in this folder.
@@ -119,7 +119,8 @@ class GatheredFood {
 
 function initialize() {
     let custommethods = {
-        postMCSListener: postMCSListener
+        postMCSListener: postMCSListener,
+        drawCanvas: drawCanvas
     }
 
     // Foraging parameters
@@ -181,7 +182,47 @@ function postMCSListener() {
 
     chemotaxisMCS(this)
 }
+function drawCanvas() {
+    // Add the canvas if required
+    if (!this.helpClasses["canvas"]) { this.addCanvas() }
+    this.Cim.clear( "FFFFFF" )
+    this.Cim.drawField(this.gi)
 
+    let cellcolor=( this.conf["CELLCOLOR"] || [] ), actcolor=this.conf["ACTCOLOR"], 
+    nrcells=this.conf["NRCELLS"], cellkind, cellborders = this.conf["SHOWBORDERS"]
+    for( cellkind = 0; cellkind < nrcells.length; cellkind ++ ){
+
+        // draw the cells of each kind in the right color
+        if( cellcolor[ cellkind ] !== -1 ){
+            this.Cim.drawCells( cellkind+1, cellcolor[cellkind] )
+        }
+        
+        // Draw borders if required
+        if(  this.conf.hasOwnProperty("SHOWBORDERS") && cellborders[ cellkind  ] ){
+            let bordercol = "000000"
+            if( this.conf.hasOwnProperty("BORDERCOL") ){
+                bordercol = this.conf["BORDERCOL"][cellkind] || "000000"
+            }
+            this.Cim.drawCellBorders( cellkind+1, bordercol )
+        }
+        
+        // if there is an activity constraint, draw activity values depending on color.
+        if( this.C.conf["LAMBDA_ACT"] !== undefined && this.C.conf["LAMBDA_ACT"][ cellkind + 1 ] > 0 ){ //this.constraints.hasOwnProperty( "ActivityConstraint" ) ){
+            let colorAct
+            if( typeof actcolor !== "undefined" ){
+                colorAct = actcolor[ cellkind ] || false
+            } else {
+                colorAct = false
+            }
+            if( ( colorAct ) ){
+                this.Cim.drawActivityValues( cellkind + 1 )//, this.constraints["ActivityConstraint"] )
+            }			
+        }
+        
+
+    }
+
+}
 function chemotaxisMCS(context) {
     // TODO: this crashes after the food cells are reseeded in findFoodToRespawn() (probably something with mixed grids?)
     let centroids = context.C.getStat(CPM.CentroidsWithTorusCorrection)
