@@ -56,7 +56,7 @@ let config = {
     simsettings: {
 
         // Cells on the grid
-        NRCELLS: [10, 1],                       // Number of cells to seed for all
+        NRCELLS: [10, 0],                       // Number of cells to seed for all
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
@@ -81,7 +81,7 @@ let config = {
         STATSOUT: { browser: false, node: true }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
         DEBUG: false,
-        FINAL_OUTPUT: false
+        FINAL_OUTPUT: true
     }
 }
 /*  ---------------------------------- */
@@ -134,7 +134,7 @@ function initialize() {
     }
 
     // Foraging parameters
-    livelihood = maxLivelihood = 1000
+    livelihood = maxLivelihood = 10
     foodIncrement = 200
     livelihoodDecay = -0.5
 
@@ -160,6 +160,7 @@ function initialize() {
     ))
 
     gm = new CPM.GridManipulator(sim.C)
+    gm.seedCellAt(mainCellKind,[sim.C.extents[0]/2,sim.C.extents[1]/2])
     for (let cid of sim.C.cellIDs()) {
         if (sim.C.cellKind(cid) === mainCellKind) {
             let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
@@ -254,7 +255,7 @@ function logStats() {
         console.log( this.time + ", " + thecentroid.join(", ") );
         
     }
-
+    
 }
 
 function chemotaxisMCS() {
