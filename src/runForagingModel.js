@@ -114,7 +114,7 @@ class GatheredFood {
         this.centroid = centroid.map(function(e) {
             return Math.round(e);
         })
-        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 200), 20, 200)
+        this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 500), 300, 500)
     }
 
     getRespawnTime() {
@@ -173,7 +173,7 @@ function postMCSListener() {
     mutateLivelihood(livelihoodDecay)
 
     if (killCels()) {
-        distanceToFood = calc_distance_to_nearest_food()
+        
         // Cell died, return from simulation
 
 
@@ -303,6 +303,7 @@ function killCels() {
                 endX = centroids[cid][0]
                 endY = centroids[cid][1]
             }
+            distanceToFood = calc_distance_to_nearest_food()
             gm.killCell(cid)
             return true
         }
