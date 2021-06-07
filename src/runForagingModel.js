@@ -71,7 +71,7 @@ let config = {
         zoom: 2,                            // zoom in on canvas with this factor.
 
         // Output images
-        SAVEIMG: true,                 // Should a png image of the grid be saved
+        SAVEIMG: false,                 // Should a png image of the grid be saved
         // during the simulation?
         IMGFRAMERATE: 1,                    // If so, do this every <IMGFRAMERATE> MCS.
         SAVEPATH: "output/img/ForagingModel",    // ... And save the image in this folder.
@@ -99,6 +99,12 @@ try {
 	console.error(err)
 }
 
+try{
+    config["simsettings"]["SAVEIMG"] = process.argv[3]
+}
+catch (err){
+    // No value, leave default
+}
 let sim, gm
 let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY
 
