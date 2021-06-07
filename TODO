@@ -1,0 +1,22 @@
+Evolutie
+--------
+Y: grid groter maken
+M: zorgen dat het een natuurlijke cel blijft
+M: goede output aan het einde van een run
+A: chemotaxis kijken en beter maken
+Y: Evolutie aanpassen om op de nieuwe fitness te werken
+L: chemokine field res lets food fall outside it on the edges
+L: Food comes back
+
+runnen???
+
+Analyse
+---------
+levy walks???
+
+Verslag
+----------
+Y: Introduction
+M: Methods
+Rest???
+Refrences verzamelen
