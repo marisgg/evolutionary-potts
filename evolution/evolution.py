@@ -2,7 +2,7 @@ import subprocess
 import pandas as pd
 import io
 import random
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, Value, cpu_count
 import time
 import os
 import json
@@ -32,8 +32,13 @@ def fitness(history):
     return np.linalg.norm(endpos-startpos)
 
 def fitness_from_tuple(output):
+    def to_int_or_float(s):
+        try:
+            return int(s)
+        except ValueError:
+            return float(s)
     spl = output.rstrip("\n").split(",")
-    int_tuple = tuple(map(int, spl))
+    int_tuple = tuple(map(to_int_or_float, spl))
     return int_tuple
 
 def run_js_simulation(args):

@@ -60,7 +60,7 @@ let config = {
         // non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
-        RUNTIME: 10000,
+        RUNTIME: 5000,
         RUNTIME_BROWSER: "Inf",
 
         // Visualization
@@ -100,7 +100,7 @@ try {
 }
 
 let sim, gm
-let livelihood, maxLivelihood, foodIncrement, livelihoodDecay
+let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY
 
 class GatheredFood {
     constructor(centroid, currentMCS) {
@@ -149,6 +149,13 @@ function initialize() {
     ))
 
     gm = new CPM.GridManipulator(sim.C)
+    for (let cid of sim.C.cellIDs()) {
+        if (sim.C.cellKind(cid) === mainCellKind) {
+            let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
+            startX = centroids[cid][0]
+            startY = centroids[cid][1]
+        }
+    }
 }
 
 function postMCSListener() {
@@ -156,7 +163,16 @@ function postMCSListener() {
     mutateLivelihood(livelihoodDecay)
 
     if (killCels()) {
+        for (let cid of sim.C.cellIDs()) {
+            if (sim.C.cellKind(cid) === mainCellKind) {
+                let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
+                endX = centroids[cid][0]
+                endY = centroids[cid][1]
+            }
+        }
         // Cell died, return from simulation
+
+
         config.simsettings.RUNTIME = -1
     }
     if (config.RESPAWN_FOOD) {
@@ -236,6 +252,12 @@ function killCels() {
         } else if (sim.C.cellKind(cid) === mainCellKind && livelihood <= 0) {
             // TODO: check neighbors of main cell for food instead of vice versa
             if (config.simsettings.DEBUG) { console.log("Killed the cell due to starvation!") }
+            if(typeof endX == "undefined" || typeof endY == "undefined"){
+                // Undefined final position because cell is alive, calculate now
+                let centroids = sim.C.getStat(CPM.CentroidsWithTorusCorrection)
+                endX = centroids[cid][0]
+                endY = centroids[cid][1]
+            }
             gm.killCell(cid)
             return true
         }
@@ -248,5 +270,8 @@ initialize()
 sim.run()
 
 if (config.simsettings.FINAL_OUTPUT) {
-    console.log(sim.time+","+livelihood)
+
+    let distance_traveled = Math.sqrt(Math.pow(startX-endX, 2) + Math.pow(startY-endY, 2))
+    console.error("post", startX, endX, startY, endY, distance_traveled)
+    console.log(sim.time+","+livelihood+","+distance_traveled)
 }
