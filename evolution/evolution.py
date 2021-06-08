@@ -62,13 +62,13 @@ def create_param_files(generation):
     j = json.loads('''
                     {
                         "conf":{
-                            "MAX_ACT": [0, 0, 30],
-                            "V": [0, 30, 500],
-                            "P": [0, 5, 260],
-                            "LAMBDA_ACT": [0, 0, 300],
-                            "LAMBDA_V": [0, 1000, 5],
-                            "LAMBDA_P": [0, 1, 2],
-                            "LAMBDA_CH": [0, 0, 500]
+                            "MAX_ACT": [0, 0, NaN, 30],
+                            "V": [0, 30, NaN, 500],
+                            "P": [0, 5, NaN, 260],
+                            "LAMBDA_ACT": [0, 0, NaN, 300],
+                            "LAMBDA_V": [0, 1000, NaN, 5],
+                            "LAMBDA_P": [0, 1, NaN, 2],
+                            "LAMBDA_CH": [0, 0, NaN, 500]
                         }
                     }''')
     paramnames = []
