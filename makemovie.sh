@@ -1,3 +1,4 @@
+#!/bin/bash
 for i in output/img/ForagingModel/*.png
 do
     PNGNAME=$i
