@@ -13,7 +13,7 @@ let config = {
     CHEMOKINE_RES: 10,
 
     // Boolean indicating whether gathered food respawns
-    RESPAWN_FOOD : false,
+    RESPAWN_FOOD : true,
     RANDOM_FOOD_RESPAWN_TIME : false,
 
     // CPM parameters and configuration
@@ -99,6 +99,10 @@ try {
 	config["conf"]["V"] = Object.values(fileConfig["conf"]["V"])
 	config["conf"]["LAMBDA_V"] = Object.values(fileConfig["conf"]["LAMBDA_V"])
     config["conf"]["LAMBDA_CH"] = Object.values(fileConfig["conf"]["LAMBDA_CH"])
+    let use_changing_seed = true
+    if(use_changing_seed){
+    config["conf"]["seed"] = Object.values(fileConfig["conf"]["seed"])
+    }
   } catch (err) {
 	console.error(err)
 }
@@ -120,7 +124,7 @@ class GatheredFood {
         if (config.RANDOM_FOOD_RESPAWN_TIME) {
         this.respawnTime = currentMCS + clip(Math.floor(Math.random() * 200), 20, 200)
         } else {
-            this.respawnTime = currentMCS + 200
+            this.respawnTime = currentMCS + 1000
         }
     }
 

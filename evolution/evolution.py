@@ -12,6 +12,7 @@ PARAM_DIR = "./params"
 GENERATION_SIZE = 4*12
 MUTATION_SCALE = 1
 N_ELITE = 2
+POTTS_SEED = 1
 
 def mutate_cell(cell):
     cell = cell.copy()
@@ -68,10 +69,14 @@ def create_param_files(generation):
                             "LAMBDA_ACT": [0, 0, 0, 300],
                             "LAMBDA_V": [0, 1000, 0, 5],
                             "LAMBDA_P": [0, 1, 0, 2],
-                            "LAMBDA_CH": [0, 0, 0, 500]
+                            "LAMBDA_CH": [0, 0, 0, 500],
+                            "seed": 1
                         }
                     }''')
     paramnames = []
+    global POTTS_SEED
+    j["conf"]["seed"] = POTTS_SEED
+    POTTS_SEED = POTTS_SEED + 1
     for i, cell in enumerate(generation):
         j["conf"]["MAX_ACT"][-1] = cell["MAX_ACT"]
         j["conf"]["V"][-1] = cell["V"]
@@ -125,7 +130,7 @@ def next_generation_elitism_and_roulette(generation_with_fitnesses):
     #     gen_w_f.append(mutate_cell(gen_w_f[i%N_ELITE]))
     #     i += 1
     sample_weights = np.array(fitnesses)
-    sample_weights = sample_weights - np.min(sample_weights) + 100
+    sample_weights = sample_weights - np.min(sample_weights) + 10
     sample_weights = sample_weights/sum(sample_weights)
     print(sample_weights)
     sampled_cells = np.random.choice(gen_w_f, size=GENERATION_SIZE-N_ELITE, p=sample_weights)
@@ -149,12 +154,18 @@ def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesse
     next_gen = elites + [mutate_cell(c) for c in sampled_cells]
     return next_gen
 
+def init_individual():
+    start = {'MAX_ACT': 2, 'P': 250, 'V': 500, 'LAMBDA_ACT': 5, 'LAMBDA_P': 2, 'LAMBDA_V': 5, 'LAMBDA_CH': 5}
+    for p in ['MAX_ACT', 'LAMBDA_ACT', 'LAMBDA_CH']:
+        start[p] = np.round(np.random.uniform(low=2, high=50), decimals=2)
+    return start
+
 def evolve(filename, num_generations):
     init()
-    generation = [{'MAX_ACT': 10, 'P': 250, 'V': 500, 'LAMBDA_ACT': 300, 'LAMBDA_P': 2, 'LAMBDA_V': 5, 'LAMBDA_CH': 20} for i in range(GENERATION_SIZE)]
-    generation = list(map(mutate_cell, generation))
+    generation = [init_individual() for i in range(GENERATION_SIZE)]
+    #generation = list(map(mutate_cell, generation))
     for i in range(num_generations):
-        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count())
+        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_roulette(gen_fitnesses)
 
     
