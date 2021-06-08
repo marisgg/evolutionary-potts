@@ -70,7 +70,8 @@ let config = {
         // Visualization
         CANVASCOLOR: "eaecef",
         CELLCOLOR: ["00ff00", "000000"],
-        ACTCOLOR: [false, true, false],                    // Should pixel activity values be displayed?
+        // [Food, Border, Main]
+        ACTCOLOR: [false, false, true],                    // Should pixel activity values be displayed?
         SHOWBORDERS: [true, false, false],             // Should cellborders be displayed?
         zoom: 2,                            // zoom in on canvas with this factor.
 
