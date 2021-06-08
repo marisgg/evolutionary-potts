@@ -20,7 +20,7 @@ let config = {
     conf: {
         // Basic CPM parameters
         torus: [false, false],                        // Should the grid have linked borders?
-        //seed: 1,                            // Seed for random number generation.
+        seed: 1,                            // Seed for random number generation.
         T: 10,                              // CPM temperature
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
@@ -35,7 +35,7 @@ let config = {
         CONNECTIVITY: [false, false, true], // ConnectivyConstraint boolean parameter
 
         // Adhesion parameters:
-        J: [[0, 100, 10], [100, 10, -1], [10, -1, 0]],
+        J: [[0, 100, -5], [100, 10, -1], [-5, -1, 0]],
 
         // VolumeConstraint parameters
         LAMBDA_V: [0, 1000, 5],                     // VolumeConstraint importance per cellkind
@@ -81,7 +81,7 @@ let config = {
         // Output stats etc
         STATSOUT: { browser: false, node: true }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
-        DEBUG: false,
+        DEBUG: true,
         FINAL_OUTPUT: true
     }
 }
@@ -96,7 +96,6 @@ try {
 	config["conf"]["V"] = Object.values(fileConfig["conf"]["V"])
 	config["conf"]["LAMBDA_V"] = Object.values(fileConfig["conf"]["LAMBDA_V"])
     config["conf"]["LAMBDA_CH"] = Object.values(fileConfig["conf"]["LAMBDA_CH"])
-    
   } catch (err) {
 	console.error(err)
 }
@@ -104,9 +103,11 @@ try {
 try{
     config["simsettings"]["SAVEIMG"] = process.argv[3]
 }
+
 catch (err){
     // No value, leave default
 }
+
 let sim, gm
 let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY, distanceToFood
 
@@ -137,9 +138,11 @@ function initialize() {
     }
 
     // Foraging parameters
-    livelihood = maxLivelihood = 1000
-    foodIncrement = 200
     livelihoodDecay = -0.5
+    livelihood = 1000
+    maxLivelihood = 1000
+    foodIncrement = 200
+
 
     eatenFood = []
     // Respawn food at random location or original?
