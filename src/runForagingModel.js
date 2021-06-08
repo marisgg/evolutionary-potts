@@ -152,8 +152,8 @@ function initialize() {
     // Respawn food at random location or original?
     respawnFoodAtRandom = false
 
-    mainCellKind = 2
     foodCellKind = 1
+    mainCellKind = 2
 
     sim = new CPM.Simulation(config, custommethods)
     sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.conf.torus, "Float32")
@@ -170,9 +170,10 @@ function initialize() {
     ))
 
     gm = new CPM.GridManipulator(sim.C)
+    // Seed main cell at midpoint
     gm.seedCellAt(mainCellKind, sim.C.midpoint)
-    let centroids = sim.C.getStat(CPM.Centroids)
 
+    let centroids = sim.C.getStat(CPM.Centroids)
     for (let cid of sim.C.cellIDs()) {
         if (sim.C.cellKind(cid) === mainCellKind) {
             startX = centroids[cid][0]
@@ -181,32 +182,6 @@ function initialize() {
     }
 }
 
-/* The following custom methods will be added to the simulation object*/
-// function initializeGrid(){
-	
-// 	// add the initializer if not already there
-// 	if( !this.helpClasses["gm"] ){ 
-//         console.log("Should this happen?")
-//         this.addGridManipulator() 
-//     }
-
-//     // this.C.reset();
-	
-// 	let nrcells = this.conf["NRCELLS"], cellkind, i
-// 	this.buildBorder()
-		
-// 	// Seed the right number of cells for each cellkind
-// 	for( cellkind = 0; cellkind < nrcells.length; cellkind ++ ){
-			
-// 		for( i = 0; i < nrcells[cellkind]; i++ ){
-// 			// first cell always at the midpoint. Any other cells
-// 			// randomly.				
-//             this.gm.seedCell( cellkind+1 )
-// 		}
-// 	}
-//     this.gm.seedCellAt(mainCellKind, this.C.midpoint)
-// }
-	
 function buildBorder(){
 		
 	let bordervoxels
@@ -220,8 +195,6 @@ function buildBorder(){
 	bordervoxels = this.gm.makePlane( bordervoxels, 1, this.C.extents[1]-1)
 	
 	this.gm.changeKind( bordervoxels, 3)
-	
-    console.log(bordervoxels)
 }
 
 function postMCSListener() {
