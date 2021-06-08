@@ -25,7 +25,7 @@ let config = {
         D: 0.1,                             // Diffusion parameter
         SECR: 3,                            // Chemokine secrection rate
         DECAY: 0.999,                       // Chemokine decay
-        LAMBDA_CH: [0, 0, 500],             // Importance of chemokine for each cell kind 
+        LAMBDA_CH: [0, 0, 16.09],             // Importance of chemokine for each cell kind 
 
         // Constraint parameters. 
         // Mostly these have the format of an array in which each element specifies the
@@ -42,13 +42,13 @@ let config = {
         V: [0, 30, 500],                            // Target volume of each cellkind
 
         // PerimeterConstraint parameters
-        LAMBDA_P: [0, 1, 2.86],                        // PerimeterConstraint importance per cellkind
-        P: [0, 5, 283.82],                             // Target perimeter of each cellkind
+        LAMBDA_P: [0, 1, 2],                        // PerimeterConstraint importance per cellkind
+        P: [0, 5, 250],                             // Target perimeter of each cellkind
 
         // ActivityConstraint parameters
-        LAMBDA_ACT: [0, 0, 243.08],                // ActivityConstraint importance per cellkind
-        MAX_ACT: [0, 0, 4.28],                    // Activity memory duration per cellkind
-        ACT_MEAN: "geometric"                   // Is neighborhood activity computed as a
+        LAMBDA_ACT: [0, 0, 288.48],                 // ActivityConstraint importance per cellkind
+        MAX_ACT: [0, 0, 42.28],                     // Activity memory duration per cellkind
+        ACT_MEAN: "geometric"                       // Is neighborhood activity computed as a
         // "geometric" or "arithmetic" mean?
 
     },
@@ -152,7 +152,7 @@ function initialize() {
     foodCellKind = 1
 
     sim = new CPM.Simulation(config, custommethods)
-    sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.torus, "Float32")
+    sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.conf.torus, "Float32")
     sim.gi = new CPM.CoarseGrid(sim.g, config.CHEMOKINE_RES)
 
     sim.C.add(new CPM.ConnectivityConstraint({
