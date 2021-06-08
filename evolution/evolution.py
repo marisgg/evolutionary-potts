@@ -10,14 +10,17 @@ import numpy as np
 
 PARAM_DIR = "./params"
 GENERATION_SIZE = 4*12
-MUTATION_SCALE = 5
-N_ELITE = 3
+MUTATION_SCALE = 1
+N_ELITE = 2
 
 def mutate_cell(cell):
     cell = cell.copy()
     for attr in cell.keys():
+        if attr in ["P", "V", "LAMBDA_P", "LAMBDA_V"]:
+            # Do not mutate, keep as is
+            continue
         if np.random.choice([True]):
-            cell[attr] = max(2, np.round(cell[attr] + np.random.normal(scale=MUTATION_SCALE) + cell[attr]*np.random.normal(scale=MUTATION_SCALE)/100, decimals=2))
+            cell[attr] = max(2, np.round(cell[attr] + MUTATION_SCALE*np.random.standard_cauchy(), decimals=2))
     return cell
 
 def fitness(history):
@@ -40,7 +43,9 @@ def fitness_from_tuple(output):
             return float(s)
     spl = output.rstrip("\n").split(",")
     int_tuple = tuple(map(to_int_or_float, spl))
-    return int_tuple
+    # fitness = time alive + livelihood left + (100 - distance to nearest food)
+    fitness = int_tuple[0]
+    return int_tuple[0]+ int_tuple[1] + (100+int_tuple[2])
 
 def run_js_simulation(args):
     (modelname, paramname) = args
@@ -58,7 +63,7 @@ def create_param_files(generation):
                     {
                         "conf":{
                             "MAX_ACT": [0, 0, 30],
-                            "V": [0, 10, 500],
+                            "V": [0, 30, 500],
                             "P": [0, 5, 260],
                             "LAMBDA_ACT": [0, 0, 300],
                             "LAMBDA_V": [0, 1000, 5],
@@ -106,6 +111,27 @@ def next_gen_elites_only(generation_with_fitnesses):
         i += 1
     return gen_w_f
 
+def next_generation_elitism_and_roulette(generation_with_fitnesses):
+    # Sort by increasing fitness
+    gen_w_f = sorted(generation_with_fitnesses, key=lambda x: x[1], reverse=True)
+    print(gen_w_f[0])
+    fitnesses = list(map(lambda x: x[1], gen_w_f))
+
+    gen_w_f = list(map(lambda x: x[0], gen_w_f))
+    elites = gen_w_f[:N_ELITE]
+
+    i = 0
+    # while len(gen_w_f) < GENERATION_SIZE:
+    #     gen_w_f.append(mutate_cell(gen_w_f[i%N_ELITE]))
+    #     i += 1
+    sample_weights = np.array(fitnesses)
+    sample_weights = sample_weights - np.min(sample_weights) + 100
+    sample_weights = sample_weights/sum(sample_weights)
+    print(sample_weights)
+    sampled_cells = np.random.choice(gen_w_f, size=GENERATION_SIZE-N_ELITE, p=sample_weights)
+    next_gen = elites + [mutate_cell(c) for c in sampled_cells]
+    return next_gen
+
 def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesses):
     # Sort by increasing fitness
     gen_w_f = sorted(generation_with_fitnesses, key=lambda x: x[1], reverse=True)
@@ -117,7 +143,7 @@ def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesse
     # while len(gen_w_f) < GENERATION_SIZE:
     #     gen_w_f.append(mutate_cell(gen_w_f[i%N_ELITE]))
     #     i += 1
-    sample_weights = np.array([1/(x+3) for x in range(GENERATION_SIZE)])
+    sample_weights = np.array([(1/(x+3))**2 for x in range(GENERATION_SIZE)])
     sample_weights = sample_weights/sum(sample_weights)
     sampled_cells = np.random.choice(gen_w_f, size=GENERATION_SIZE-N_ELITE, p=sample_weights)
     next_gen = elites + [mutate_cell(c) for c in sampled_cells]
@@ -125,10 +151,10 @@ def next_generation_elitism_and_inverse_position_sample(generation_with_fitnesse
 
 def evolve(filename, num_generations):
     init()
-    generation = [{'MAX_ACT': 40.07, 'P': 262.57, 'V': 396.1, 'LAMBDA_ACT': 35.54, 'LAMBDA_P': 4.67, 'LAMBDA_V': 10.42, 'LAMBDA_CH': 8.94} for i in range(GENERATION_SIZE)]
+    generation = [{'MAX_ACT': 10, 'P': 250, 'V': 500, 'LAMBDA_ACT': 300, 'LAMBDA_P': 2, 'LAMBDA_V': 5, 'LAMBDA_CH': 20} for i in range(GENERATION_SIZE)]
     generation = list(map(mutate_cell, generation))
     for i in range(num_generations):
-        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
-        generation = next_generation_elitism_and_inverse_position_sample(gen_fitnesses)
+        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count())
+        generation = next_generation_elitism_and_roulette(gen_fitnesses)
 
     
