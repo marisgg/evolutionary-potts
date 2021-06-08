@@ -63,7 +63,7 @@ let config = {
         // [Food, Border, Main] <- border and main are seeded manually
         NRCELLS: [10, 0, 0],                       // Number of cells to seed for all non-background cellkinds.
         // Runtime etc
-        BURNIN: 500,
+        BURNIN: 50,
         RUNTIME: 10000,
         RUNTIME_BROWSER: "Inf",
 
@@ -82,7 +82,7 @@ let config = {
         EXPNAME: "ForagingModel",                    // Used for the filename of output images.
 
         // Output stats etc
-        STATSOUT: { browser: false, node: false }, // Should stats be computed?
+        STATSOUT: { browser: false, node: true }, // Should stats be computed?
         LOGRATE: 10,                         // Output stats every <LOGRATE> MCS.
         DEBUG: false,
         FINAL_OUTPUT: true
@@ -173,7 +173,7 @@ function initialize() {
 
     gm = new CPM.GridManipulator(sim.C)
     // Seed main cell at midpoint
-    gm.seedCellAt(mainCellKind, sim.C.midpoint)
+    gm.seedCellAt(mainCellKind,[sim.C.extents[0]/2,sim.C.extents[1]/2])
 
     let centroids = sim.C.getStat(CPM.Centroids)
     for (let cid of sim.C.cellIDs()) {
