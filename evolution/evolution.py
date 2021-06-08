@@ -13,6 +13,8 @@ GENERATION_SIZE = 4*12
 MUTATION_SCALE = 1
 N_ELITE = 2
 POTTS_SEED = 1
+CHANGE_POTTS_SEED_PER_GEN = False
+np.random.seed(POTTS_SEED)
 
 def mutate_cell(cell):
     cell = cell.copy()
@@ -76,7 +78,8 @@ def create_param_files(generation):
     paramnames = []
     global POTTS_SEED
     j["conf"]["seed"] = POTTS_SEED
-    POTTS_SEED = POTTS_SEED + 1
+    if CHANGE_POTTS_SEED_PER_GEN:
+        POTTS_SEED = POTTS_SEED + 1
     for i, cell in enumerate(generation):
         j["conf"]["MAX_ACT"][-1] = cell["MAX_ACT"]
         j["conf"]["V"][-1] = cell["V"]

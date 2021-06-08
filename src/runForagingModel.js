@@ -101,7 +101,7 @@ try {
     config["conf"]["LAMBDA_CH"] = Object.values(fileConfig["conf"]["LAMBDA_CH"])
     let use_changing_seed = true
     if(use_changing_seed){
-    config["conf"]["seed"] = Object.values(fileConfig["conf"]["seed"])
+    config["conf"]["seed"] = fileConfig["conf"]["seed"]
     }
   } catch (err) {
 	console.error(err)
