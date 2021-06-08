@@ -10,10 +10,10 @@ let config = {
     // Grid settings
     ndim: 2,
     field_size: [400, 400],
-    CHEMOKINE_RES: 5,
+    CHEMOKINE_RES: 10,
 
     // Boolean indicating whether gathered food respawns
-    RESPAWN_FOOD : true,
+    RESPAWN_FOOD : false,
     RANDOM_FOOD_RESPAWN_TIME : false,
 
     // CPM parameters and configuration
@@ -38,8 +38,8 @@ let config = {
         J: [[0, 100, 10], [100, 10, -1], [10, -1, 0]],
 
         // VolumeConstraint parameters
-        LAMBDA_V: [0, 243.08, 5],                     // VolumeConstraint importance per cellkind
-        V: [0, 10, 360.05],                            // Target volume of each cellkind
+        LAMBDA_V: [0, 1000, 5],                     // VolumeConstraint importance per cellkind
+        V: [0, 30, 500],                            // Target volume of each cellkind
 
         // PerimeterConstraint parameters
         LAMBDA_P: [0, 1, 2.86],                        // PerimeterConstraint importance per cellkind
@@ -265,13 +265,13 @@ function chemotaxisMCS() {
     let centroids = sim.C.getStat(CPM.Centroids)
     for (let cid in centroids) {
         if (sim.C.cellKind(cid) === foodCellKind) {
-            let c = [Math.floor(centroids[cid][0] / config.CHEMOKINE_RES), Math.floor(centroids[cid][1] / config.CHEMOKINE_RES)]
+            let c = [Math.round(centroids[cid][0] / config.CHEMOKINE_RES), Math.round(centroids[cid][1] / config.CHEMOKINE_RES)]
             sim.g.setpix(c, sim.C.conf["SECR"])
         }
     }
 
-    for (let i = 1; i <= config.CHEMOKINE_RES; i++) {
-        sim.g.diffusion(sim.C.conf["D"])
+    for (let i = 1; i <= 10; i++) {
+        sim.g.diffusion(sim.C.conf["D"]*0.1)
     }
     sim.g.multiplyBy(sim.C.conf["DECAY"])
 }
