@@ -15,7 +15,7 @@ let config = {
     // Boolean indicating whether gathered food respawns
     RESPAWN_FOOD : true,
     RANDOM_FOOD_RESPAWN_TIME : false,
-
+    AVOID_CENTER_SEEDING: false,
     // CPM parameters and configuration
     conf: {
         // Basic CPM parameters
@@ -216,7 +216,18 @@ function initializeGrid() {
     for(cellkind = 0; cellkind < nrcells.length; cellkind ++) {
         for(i = 0; i < nrcells[cellkind]; i++) {
             // seed cells randomly (only food cells as per config)
-            this.gm.seedCell(cellkind+1);
+            if(config.AVOID_CENTER_SEEDING){
+                let ranX = this.C.ran(0,this.C.extents[0]-1)
+                let ranY = this.C.ran(0,this.C.extents[1]-1)
+                while(euclidean_distance(this.C.extents[0]/2, ranX, this.C.extents[1]/2, ranY) < 80){
+                    ranX = this.C.ran(0,this.C.extents[0]-1)
+                    ranY = this.C.ran(0,this.C.extents[1]-1)
+                }
+                this.gm.seedCellAt(cellkind+1, [ranX, ranY]);
+            }
+            else{
+                this.gm.seedCell(cellkind+1);
+            }
         }
     }
 }
