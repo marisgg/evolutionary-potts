@@ -32,23 +32,25 @@ let config = {
         // parameter value for one of the cellkinds on the grid.
         // First value is always cellkind 0 (the background) and is often not used.
 
-        CONNECTIVITY: [false, false, true, false], // ConnectivyConstraint boolean parameter
-		IS_BARRIER : [false, false, false, true ], // BarrierConstraint parameters
+        // [Background, Food, Border, Main]
+        CONNECTIVITY: [false, false, false, true], // ConnectivyConstraint boolean parameter
+		IS_BARRIER : [false, false, true, false ], // BarrierConstraint parameters
 
         // Adhesion parameters:
-        J: [[0, 100, -5, 0], [100, 10, -1, 0], [-5, -1, 0, 200], [0, 0, 200, 0]],
+        // [Background, Food, Border, Main]
+        J: [[0, 100, 0, -5], [100, 10, 0, -1], [0, 0, 0, 200], [-5, -1, 200, 0]],
 
         // VolumeConstraint parameters
-        LAMBDA_V: [0, 1000, 5, NaN],                     // VolumeConstraint importance per cellkind
-        V: [0, 30, 500, NaN],                            // Target volume of each cellkind
+        LAMBDA_V: [0, 1000, NaN, 5],                     // VolumeConstraint importance per cellkind
+        V: [0, 30, NaN, 500],                            // Target volume of each cellkind
 
         // PerimeterConstraint parameters
-        LAMBDA_P: [0, 1, 2, NaN],                        // PerimeterConstraint importance per cellkind
-        P: [0, 5, 260, NaN],                             // Target perimeter of each cellkind
+        LAMBDA_P: [0, 1, NaN, 2],                        // PerimeterConstraint importance per cellkind
+        P: [0, 5, NaN, 260],                             // Target perimeter of each cellkind
 
         // ActivityConstraint parameters
-        LAMBDA_ACT: [0, 0, 300, NaN],                // ActivityConstraint importance per cellkind
-        MAX_ACT: [0, 0, 30, NaN],                    // Activity memory duration per cellkind
+        LAMBDA_ACT: [0, 0, NaN, 300],                // ActivityConstraint importance per cellkind
+        MAX_ACT: [0, 0, NaN, 30],                    // Activity memory duration per cellkind
         ACT_MEAN: "geometric"                   // Is neighborhood activity computed as a
         // "geometric" or "arithmetic" mean?
 
@@ -58,8 +60,8 @@ let config = {
     simsettings: {
 
         // Cells on the grid
-        NRCELLS: [10, 0, 0],                       // Number of cells to seed for all
-        // non-background cellkinds.
+        // [Food, Border, Main] <- border and main are seeded manually
+        NRCELLS: [10, 0, 0],                       // Number of cells to seed for all non-background cellkinds.
         // Runtime etc
         BURNIN: 500,
         RUNTIME: 10000,
@@ -73,8 +75,7 @@ let config = {
         zoom: 2,                            // zoom in on canvas with this factor.
 
         // Output images
-        SAVEIMG: false,                 // Should a png image of the grid be saved
-        // during the simulation?
+        SAVEIMG: false,                 // Should a png image of the grid be saved during the simulation?
         IMGFRAMERATE: 10,                    // If so, do this every <IMGFRAMERATE> MCS.
         SAVEPATH: "output/img/ForagingModel",    // ... And save the image in this folder.
         EXPNAME: "ForagingModel",                    // Used for the filename of output images.
@@ -88,22 +89,21 @@ let config = {
 }
 /*  ---------------------------------- */
 try {
-    // ({'MAX_ACT': 42.28, 'P': 250, 'V': 500, 'LAMBDA_ACT': 288.48, 'LAMBDA_P': 2, 'LAMBDA_V': 5, 'LAMBDA_CH': 16.09}, 3222.751910719703)
-	config["conf"]["MAX_ACT"] = [ 0, 0, 42.28, NaN ]
+	const fileConfig = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+	config["conf"]["MAX_ACT"] = Object.values(fileConfig["conf"]["MAX_ACT"])
 
-	config["conf"]["LAMBDA_ACT"] = [ 0, 0, 288.48, NaN]
-	config["conf"]["P"] = [ 0, 5, 250, NaN ]
-	config["conf"]["LAMBDA_P"] = [ 0, 1, 2, NaN ]
-	config["conf"]["V"] =  [ 0, 30, 500,  NaN ]
-	config["conf"]["LAMBDA_V"] = [ 0, 1000, 5, NaN ]
-    config["conf"]["LAMBDA_CH"] = [0, 0, 16.09, NaN]
-    console.log(config.conf)
+	config["conf"]["LAMBDA_ACT"] = Object.values(fileConfig["conf"]["LAMBDA_ACT"])
+	config["conf"]["P"] = Object.values(fileConfig["conf"]["P"])
+	config["conf"]["LAMBDA_P"] = Object.values(fileConfig["conf"]["LAMBDA_P"])
+	config["conf"]["V"] = Object.values(fileConfig["conf"]["V"])
+	config["conf"]["LAMBDA_V"] = Object.values(fileConfig["conf"]["LAMBDA_V"])
+    config["conf"]["LAMBDA_CH"] = Object.values(fileConfig["conf"]["LAMBDA_CH"])
   } catch (err) {
-	// console.error(err)
+	console.error(err)
 }
 
 try{
-    config["simsettings"]["SAVEIMG"] = true
+    config["simsettings"]["SAVEIMG"] = process.argv[3]
 }
 
 catch (err){
@@ -137,8 +137,8 @@ function initialize() {
         postMCSListener: postMCSListener,
         logStats: logStats,
         drawCanvas: drawCanvas,
-        buildBorder : buildBorder
-        // initializeGrid : initializeGrid
+        buildBorder : buildBorder,
+        initializeGrid : initializeGrid
     }
 
     // Foraging parameters
@@ -153,7 +153,8 @@ function initialize() {
     respawnFoodAtRandom = false
 
     foodCellKind = 1
-    mainCellKind = 2
+    borderCellKind = 2
+    mainCellKind = 3
 
     sim = new CPM.Simulation(config, custommethods)
     sim.g = new CPM.Grid2D([sim.C.extents[0] / config.CHEMOKINE_RES, sim.C.extents[1] / config.CHEMOKINE_RES], config.conf.torus, "Float32")
@@ -182,19 +183,37 @@ function initialize() {
     }
 }
 
-function buildBorder(){
+function buildBorder() {
 		
 	let bordervoxels
-
-    console.log(this.gm === undefined)
-    console.log(this.C === undefined)
 		
 	bordervoxels = this.gm.makePlane( [], 0, 0 )
 	bordervoxels = this.gm.makePlane( bordervoxels, 0, this.C.extents[0]-1)
 	bordervoxels = this.gm.makePlane( bordervoxels, 1, 0 )
 	bordervoxels = this.gm.makePlane( bordervoxels, 1, this.C.extents[1]-1)
 	
-	this.gm.changeKind( bordervoxels, 3)
+	this.gm.changeKind( bordervoxels, 2)
+}
+
+function initializeGrid() {
+	
+    // add the initializer if not already there
+    if( !this.helpClasses["gm"] ){ this.addGridManipulator(); }
+
+    // reset C and clear cache (important if this method is called
+    // again later in the sim).
+    this.C.reset();
+
+    let nrcells = this.conf["NRCELLS"], cellkind, i;
+    this.buildBorder()
+    
+    // Seed the right number of cells for each cellkind
+    for(cellkind = 0; cellkind < nrcells.length; cellkind ++) {
+        for(i = 0; i < nrcells[cellkind]; i++) {
+            // seed cells randomly (only food cells as per config)
+            this.gm.seedCell(cellkind+1);
+        }
+    }
 }
 
 function postMCSListener() {
