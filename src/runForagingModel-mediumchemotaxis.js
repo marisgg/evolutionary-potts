@@ -116,7 +116,7 @@ catch (err){
 }
 
 let sim, gm
-let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY, distanceToFood
+let livelihood, maxLivelihood, foodIncrement, livelihoodDecay, startX, startY, endX, endY, distanceToFood, minimumlifelength
 
 class GatheredFood {
     constructor(centroid, currentMCS) {
@@ -150,6 +150,7 @@ function initialize() {
     livelihoodDecay = -0.5
     livelihood = 2500
     maxLivelihood = 2500
+    minimumlifelength = (-livelihood)/livelihoodDecay
     foodIncrement = 200
 
 
@@ -440,5 +441,5 @@ if (config.simsettings.FINAL_OUTPUT) {
         distanceToFood = calc_distance_to_nearest_food()
     }
     let distance_traveled = Math.sqrt(Math.pow(startX-endX, 2) + Math.pow(startY-endY, 2))
-    console.log(sim.time+","+livelihood+","+(-distanceToFood))
+    console.log((sim.time-minimumlifelength)+","+livelihood+","+(-distanceToFood))
 }

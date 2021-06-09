@@ -9,7 +9,7 @@ import json
 import numpy as np
 
 PARAM_DIR = "./params"
-GENERATION_SIZE = 6
+GENERATION_SIZE = 4*12
 MUTATION_SCALE = .5
 N_ELITE = 2
 POTTS_SEED = 1
@@ -85,9 +85,10 @@ def create_param_files(generation, prefix="", seed=None):
     if seed is None:
         j["conf"]["seed"] = POTTS_SEED
         seed = POTTS_SEED
+        print("seed:", POTTS_SEED)
     else:
         j["conf"]["seed"] = seed
-    print("seed:", POTTS_SEED, "previous seed for run 2:", seed)
+        print("seed:", POTTS_SEED, "using previous seed for run 2:", seed)
     directory  =f"{PARAM_DIR}/gen{GENERATION_NO}/"
     os.makedirs(directory, exist_ok=True)
     for i, cell in enumerate(generation):
@@ -146,7 +147,7 @@ def next_generation_elitism_and_roulette(generation_with_fitnesses):
 
     print(gen_w_f)
     fitnesses = list(map(lambda x: x[1], gen_w_f))
-    print(f"Genfitness min: ", np.min(fitnesses), " mean: ", np.mean(fitnesses), " median: ", np.median(fitnesses), " max: ", np.max(fitnesses))
+    print(f"Genfitness min: ", np.min(fitnesses), " mean: ", np.mean(fitnesses), " median: ", np.median(fitnesses), " max: ", np.max(fitnesses), " std dev: ", np.std(fitnesses))
     gen_w_f = list(map(lambda x: x[0], gen_w_f))
     elites = gen_w_f[:N_ELITE]
 
@@ -197,6 +198,6 @@ def evolve(filename, num_generations, seed=None):
     for i in range(num_generations):
         global GENERATION_NO
         print(f"Simulation generation: {GENERATION_NO}")
-        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
+        gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count())
         GENERATION_NO = GENERATION_NO+1
         generation = next_generation_elitism_and_roulette(gen_fitnesses)
