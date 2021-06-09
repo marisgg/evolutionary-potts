@@ -169,11 +169,11 @@ function initialize() {
         CONNECTED: config.conf.CONNECTIVITY
     }))
 
-    sim.C.add(new CPM.ChemotaxisConstraint({
-        CH_FIELD: sim.gi,
-        LAMBDA_CH: config.conf.LAMBDA_CH
-    }
-    ))
+    // sim.C.add(new CPM.ChemotaxisConstraint({
+    //     CH_FIELD: sim.gi,
+    //     LAMBDA_CH: config.conf.LAMBDA_CH
+    // }
+    // ))
 
     gm = new CPM.GridManipulator(sim.C)
     // Seed main cell at midpoint
@@ -320,17 +320,17 @@ function logStats() {
 function chemotaxisMCS() {
     // TODO: this crashes after the food cells are reseeded in findFoodToRespawn() (probably something with mixed grids?)
     let centroids = sim.C.getStat(CPM.Centroids)
-    for (let cid in centroids) {
-        if (sim.C.cellKind(cid) === foodCellKind) {
-            let c = [Math.round(centroids[cid][0] / config.CHEMOKINE_RES), Math.round(centroids[cid][1] / config.CHEMOKINE_RES)]
-            sim.g.setpix(c, sim.C.conf["SECR"])
-        }
-    }
+    // for (let cid in centroids) {
+    //     if (sim.C.cellKind(cid) === foodCellKind) {
+    //         let c = [Math.round(centroids[cid][0] / config.CHEMOKINE_RES), Math.round(centroids[cid][1] / config.CHEMOKINE_RES)]
+    //         sim.g.setpix(c, sim.C.conf["SECR"])
+    //     }
+    // }
 
-    for (let i = 1; i <= 10; i++) {
-        sim.g.diffusion(sim.C.conf["D"]*0.1)
-    }
-    sim.g.multiplyBy(sim.C.conf["DECAY"])
+    // for (let i = 1; i <= 10; i++) {
+    //     sim.g.diffusion(sim.C.conf["D"]*0.1)
+    // }
+    // sim.g.multiplyBy(sim.C.conf["DECAY"])
 }
 
 function findFoodToRespawn() {

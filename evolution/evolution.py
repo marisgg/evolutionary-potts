@@ -78,6 +78,7 @@ def create_param_files(generation):
     paramnames = []
     global POTTS_SEED
     j["conf"]["seed"] = POTTS_SEED
+    print(POTTS_SEED)
     if CHANGE_POTTS_SEED_PER_GEN:
         POTTS_SEED = POTTS_SEED + 1
     for i, cell in enumerate(generation):
@@ -122,7 +123,7 @@ def next_gen_elites_only(generation_with_fitnesses):
 def next_generation_elitism_and_roulette(generation_with_fitnesses):
     # Sort by increasing fitness
     gen_w_f = sorted(generation_with_fitnesses, key=lambda x: x[1], reverse=True)
-    print(gen_w_f[0])
+    print(gen_w_f)
     fitnesses = list(map(lambda x: x[1], gen_w_f))
 
     gen_w_f = list(map(lambda x: x[0], gen_w_f))
@@ -170,4 +171,3 @@ def evolve(filename, num_generations):
     for i in range(num_generations):
         gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_roulette(gen_fitnesses)
-
