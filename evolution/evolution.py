@@ -10,10 +10,10 @@ import numpy as np
 
 PARAM_DIR = "./params"
 GENERATION_SIZE = 4*12
-MUTATION_SCALE = 1
+MUTATION_SCALE = .5
 N_ELITE = 2
 POTTS_SEED = 1
-CHANGE_POTTS_SEED_PER_GEN = False
+CHANGE_POTTS_SEED_PER_GEN = True
 np.random.seed(POTTS_SEED)
 
 def mutate_cell(cell):
@@ -171,4 +171,3 @@ def evolve(filename, num_generations):
         gen_fitnesses = simulate_generation(generation, filename, num_procs=cpu_count()-1)
         generation = next_generation_elitism_and_roulette(gen_fitnesses)
 
-    
