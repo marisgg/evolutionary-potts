@@ -12,6 +12,7 @@ for filename in os.listdir("results/"):
             runtype = filename.split("-")[1]
             result_dirs[runtype].append(filename)
 
+
 for runtype in result_dirs.keys():
     if(len(result_dirs[runtype]) == 0):
         continue
@@ -37,6 +38,7 @@ for runtype in result_dirs.keys():
                 lcl_labels.append(key)
                 axs[i].plot(range(len(fitnessdata)), [gen[key] for gen in fitnessdata], label=key)
             labels = lcl_labels
+            plt.gca().set_ylim([-500,9000])
     fig.legend(labels)
     fig.suptitle(runtype)
     plt.tight_layout()
