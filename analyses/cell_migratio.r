@@ -1,5 +1,5 @@
 # devtools::install_github( "ingewortel/celltrackR" )
-# setwd("~/Uni/4/NC/evolutionary-potts/analyses/")
+setwd("~/Uni/4/NC/evolutionary-potts/analyses/")
 library(celltrackR)
 library(VGAM)
 
@@ -22,14 +22,20 @@ levywalk <- function (nsteps = 100, dim = 3, mean = .3, s = 1)
 }
 
 fitlevy <- function(track) {
-  x <- sapply(subtracks(track, 1), FUN = trackLength)
+  x <- sapply(subtracks(track, 1), FUN = displacement)
   x <- data.frame(x)
   fit <- vglm(x ~ 1, levy(location = 0), data=x)
   return(fit)
 }
 
+tracklhist <- function(tracks, l) {
+  hist(sapply(subtracks(tracks, l), FUN = trackLength), breaks = 50, 
+       main =  paste("tracks of length", as.character(l), sep=" "),
+       xlab="average track length")
+}
+
 stats <- function(tracks) {
-  dat <- aggregate(tracks, squareDisplacement, FUN="mean.se", max.overlap = 0, 
+  dat <- aggregate(tracks, squareDisplacement, FUN="mean.se", 
                    subtrack.length = seq(1, (maxTrackLength(tracks) / 2)))
   with( dat ,{
     plot( mean ~ i, xlab="step size",
@@ -37,34 +43,54 @@ stats <- function(tracks) {
     segments( i[seq(1, length(i), 5)], lower[seq(1, length(i), 5)], y1=upper[seq(1, length(i), 5)] )
   } )
   
-  dat <- aggregate(tracks, overallNormDot, subtrack.length = seq(2, (maxTrackLength(tracks) - 1)))
-  plot(dat, type='l', main="autocorrelation for different step sizes", xlab="step size", ylab="autocorrelation")
+  # dat <- aggregate(tracks, overallNormDot, subtrack.length = seq(2, (maxTrackLength(tracks) - 1)))
+  # plot(dat, type='l', main="autocorrelation for different step sizes", 
+  #      xlab="step size", ylab="autocorrelation", ylim=c(-1,1))
+  # 
+  # dat <- aggregate(tracks, overallAngle, subtrack.length = seq(2, (maxTrackLength(tracks) - 1)))
+  # plot(dat, type='l', main="mean turning angle for different step sizes", 
+  #      xlab="step size", ylab="mean turning angle", ylim=c(0, pi))
   
-  dat <- aggregate(tracks, overallAngle, subtrack.length = seq(2, (maxTrackLength(tracks) - 1)))
-  plot(dat, type='l', main="mean turning angle for different step sizes", xlab="step size", ylab="mean turning angle")
-  
-  fit <- fitlevy(tracks[["cell"]])
-  hist(sapply(subtracks(tracks, 1), FUN = trackLength), breaks = 50, 
-       main = paste("loglikelihood:", as.character(logLik(fit)), sep=" "),
-       xlab="average track length")
+  tracklhist(tracks, 1)
+  tracklhist(tracks, 10)
+  tracklhist(tracks, 30)
+  tracklhist(tracks, 50)
 }
 
-data <- read.csv("data1.csv")
-data[] <- lapply(data, as.numeric)
+others <- function() {
+  par(mfcol=c(5,2))
+  
+  br <- as.tracks(list(cell = brownianTrack(nsteps = nrow(data), dim = 2, sd = trackLength(tracks[["cell"]])/nrow(data))))
+  plot(br, main="brownian motion")
 
-par(mfcol=c(5,3))
+  stats(br)
 
-tracks <- as.tracks(list(cell = as.matrix(data)))
-plot(tracks, main="Evolutionary cell")
+  lv <- as.tracks(list(cell = levywalk(nsteps = nrow(data), dim = 2, s = -0.855579)))
+  plot(lv, main="levy walk")
 
-stats(tracks)
+  stats(lv)
+}
 
-br <- as.tracks(list(cell = brownianTrack(nsteps = nrow(data), dim = 2, sd = trackLength(tracks[["cell"]])/nrow(data))))
-plot(br, main="brownian motion")
+analysetype <- function(prefix, names) {
+  data <- list()
+  for (n in names) {
+    print(paste(prefix, "/", n, ".csv", sep=""))
+    d <- read.csv(paste(prefix, "/", n, ".csv", sep=""))
+    data[[n]] <- as.matrix(d)
+  }
+  
+  par(mfrow=c(3,2))
+  
+  tracks <- as.tracks(data)
+  plot(tracks, main="Evolutionary cell", xlim=c(0,400), ylim=c(0,400), cex = 0, pch.start=NULL, pch.end=1)
+  
+  stats(tracks)
+  return(tracks)
+}
 
-stats(br)
-
-lv <- as.tracks(list(cell = levywalk(nsteps = nrow(data), dim = 2, s = -0.855579)))
-plot(lv, main="levy walk")
-
-stats(lv)
+# analysetype("none", c("600_best", "600_0", "700_best", "700_1", "800_best", "800_0"))
+# analysetype("medium", c("300_0", "300_45", "400_0", "400_2", "500_0", "500_46"))
+# analysetype("high", c("10_0", "10_1", "100_0", "100_44", "200_17", "200_0"))
+analysetype("high", c("10_0"))
+analysetype("medium", c("300_45"))
+analysetype("none", c("600_0"))

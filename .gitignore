@@ -10,7 +10,9 @@ output
 */.Rhistory
 venv
 run.txt
-*/*.csv
+**/*_o/
+**/*.mp4
+
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
